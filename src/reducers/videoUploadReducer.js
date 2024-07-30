@@ -8,6 +8,7 @@ export const initialState = {
   summary: '',
   speakers: [],
   scheduledTime: null,
+  playlist: null,
   isProcessing: false,
   progress: 0,
 };
@@ -32,6 +33,8 @@ export const useVideoUploadReducer = (state, action) => {
       return { ...state, speakers: action.payload };
     case 'SET_SCHEDULED_TIME':
       return { ...state, scheduledTime: action.payload };
+    case 'SET_PLAYLIST':
+      return { ...state, playlist: action.payload };
     case 'START_PROCESSING':
       return { ...state, isProcessing: true, progress: 0 };
     case 'UPDATE_PROGRESS':

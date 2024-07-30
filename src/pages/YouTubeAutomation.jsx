@@ -19,6 +19,7 @@ import ThumbnailGenerator from '@/components/ThumbnailGenerator';
 import AIMetadataGenerator from '@/components/AIMetadataGenerator';
 import KeywordSuggestions from '@/components/KeywordSuggestions';
 import ScheduleUpload from '@/components/ScheduleUpload';
+import AutoScheduler from '@/components/AutoScheduler';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import RetroactiveUpdate from '@/components/RetroactiveUpdate';
 import SocialMediaLinks from '@/components/SocialMediaLinks';
@@ -177,12 +178,26 @@ const YouTubeAutomation = () => {
   };
 
   const handleScheduleChange = (date) => {
-    setScheduledTime(date);
+    dispatch({ type: 'SET_SCHEDULED_TIME', payload: date });
+  };
+
+  const handleAutoSchedule = (playlistId, scheduledTime) => {
+    dispatch({ type: 'SET_PLAYLIST', payload: playlistId });
+    dispatch({ type: 'SET_SCHEDULED_TIME', payload: scheduledTime });
   };
 
   const handleSubmit = () => {
     // TODO: Implement actual video upload and metadata submission
-    console.log('Submitting video:', { videoFile, title, description, tags, transcription, summary, scheduledTime });
+    console.log('Submitting video:', { 
+      videoFile: state.videoFile, 
+      title: state.title, 
+      description: state.description, 
+      tags: state.tags, 
+      transcription: state.transcription, 
+      summary: state.summary, 
+      scheduledTime: state.scheduledTime,
+      playlist: state.playlist
+    });
   };
 
   const fetchAnalyticsData = async () => {
@@ -208,12 +223,13 @@ const YouTubeAutomation = () => {
       )}
       
       <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="upload">Upload</TabsTrigger>
           <TabsTrigger value="transcribe">Transcribe</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
           <TabsTrigger value="social">Social Media</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="schedule">Manual Schedule</TabsTrigger>
+          <TabsTrigger value="auto-schedule">Auto Schedule</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="retroactive">Retroactive</TabsTrigger>
         </TabsList>
@@ -289,6 +305,9 @@ const YouTubeAutomation = () => {
         </TabsContent>
         <TabsContent value="schedule">
           <ScheduleUpload onSchedule={handleScheduleChange} />
+        </TabsContent>
+        <TabsContent value="auto-schedule">
+          <AutoScheduler videoData={state} onSchedule={handleAutoSchedule} />
         </TabsContent>
         <TabsContent value="analytics">
           <AnalyticsDashboard data={analyticsData} />
