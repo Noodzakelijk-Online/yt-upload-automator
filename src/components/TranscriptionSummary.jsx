@@ -8,6 +8,7 @@ const TranscriptionSummary = ({ videoFile, onTranscriptionComplete }) => {
   const [transcription, setTranscription] = useState('');
   const [summary, setSummary] = useState('');
   const [progress, setProgress] = useState(0);
+  const [speakers, setSpeakers] = useState([]);
 
   const transcriptionServices = [
     { name: 'Web Speech API', transcribe: webSpeechTranscribe },
@@ -26,38 +27,62 @@ const TranscriptionSummary = ({ videoFile, onTranscriptionComplete }) => {
       setProgress((i + 1) / transcriptionServices.length * 100);
     }
 
-    const consolidatedTranscription = consolidateTranscriptions(transcriptions);
+    const { consolidatedTranscription, identifiedSpeakers } = consolidateTranscriptions(transcriptions);
     setTranscription(consolidatedTranscription);
+    setSpeakers(identifiedSpeakers);
 
     const generatedSummary = await generateSummary(consolidatedTranscription);
     setSummary(generatedSummary);
 
-    onTranscriptionComplete(consolidatedTranscription, generatedSummary);
+    onTranscriptionComplete(consolidatedTranscription, generatedSummary, identifiedSpeakers);
   };
 
   const webSpeechTranscribe = async (file) => {
-    // Implement Web Speech API transcription
-    return "Web Speech API transcription result";
+    // Implement Web Speech API transcription with speaker diarization
+    return {
+      text: "Web Speech API transcription result",
+      speakers: [{ id: 1, name: "Speaker 1" }]
+    };
   };
 
   const mozillaDeepSpeechTranscribe = async (file) => {
-    // Implement Mozilla DeepSpeech transcription
-    return "Mozilla DeepSpeech transcription result";
+    // Implement Mozilla DeepSpeech transcription with speaker diarization
+    return {
+      text: "Mozilla DeepSpeech transcription result",
+      speakers: [{ id: 1, name: "Speaker 1" }, { id: 2, name: "Speaker 2" }]
+    };
   };
 
   const voskTranscribe = async (file) => {
-    // Implement Vosk transcription
-    return "Vosk transcription result";
+    // Implement Vosk transcription with speaker diarization
+    return {
+      text: "Vosk transcription result",
+      speakers: [{ id: 1, name: "Speaker 1" }, { id: 2, name: "Speaker 2" }, { id: 3, name: "Speaker 3" }]
+    };
   };
 
   const consolidateTranscriptions = (transcriptions) => {
-    // Implement logic to consolidate multiple transcriptions
-    return transcriptions.join(' ');
+    // Implement logic to consolidate multiple transcriptions and merge speaker information
+    const allSpeakers = transcriptions.flatMap(t => t.speakers);
+    const uniqueSpeakers = Array.from(new Set(allSpeakers.map(s => s.id)))
+      .map(id => allSpeakers.find(s => s.id === id));
+
+    const consolidatedText = transcriptions.map(t => t.text).join(' ');
+    
+    // Here you would implement more sophisticated logic to merge speaker segments
+    const formattedTranscription = uniqueSpeakers.reduce((acc, speaker) => {
+      return acc.replace(new RegExp(`Speaker ${speaker.id}`, 'g'), speaker.name);
+    }, consolidatedText);
+
+    return {
+      consolidatedTranscription: formattedTranscription,
+      identifiedSpeakers: uniqueSpeakers
+    };
   };
 
   const generateSummary = async (transcription) => {
     // Implement summary generation logic
-    return "This is a 4-5 sentence summary of the video content.";
+    return "This is a 4-5 sentence summary of the video content, mentioning key points from different speakers.";
   };
 
   return (

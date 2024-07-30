@@ -23,6 +23,7 @@ const YouTubeAutomation = () => {
   const [tags, setTags] = useState('');
   const [transcription, setTranscription] = useState('');
   const [summary, setSummary] = useState('');
+  const [speakers, setSpeakers] = useState([]);
   const [scheduledTime, setScheduledTime] = useState(null);
 
   const { data: analyticsData } = useQuery({
@@ -42,10 +43,13 @@ const YouTubeAutomation = () => {
     setVideoFile(file);
   };
 
-  const handleTranscriptionComplete = (newTranscription, newSummary) => {
+  const handleTranscriptionComplete = (newTranscription, newSummary, identifiedSpeakers) => {
     setTranscription(newTranscription);
     setSummary(newSummary);
-    setDescription(`${newSummary}\n\nTranscript:\n${newTranscription}`);
+    setSpeakers(identifiedSpeakers);
+    
+    const speakerInfo = identifiedSpeakers.map(s => `${s.name} (Speaker ${s.id})`).join(', ');
+    setDescription(`${newSummary}\n\nSpeakers: ${speakerInfo}\n\nTranscript:\n${newTranscription}`);
   };
 
   const generateThumbnail = async (file) => {
