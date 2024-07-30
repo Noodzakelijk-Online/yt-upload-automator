@@ -8,3 +8,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <App />
   </React.StrictMode>,
 );
+
+// Add this console.log for debugging
+console.log("Main.jsx loaded");

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const Index = () => {
+  console.log("Index component rendered"); // Add this line for debugging
   return (
     <div className="flex flex-col justify-center items-center min-h-screen">
       <div className="text-center">

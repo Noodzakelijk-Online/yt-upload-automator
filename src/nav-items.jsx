@@ -26,3 +26,5 @@ export const navItems = [
     page: <RetroactiveUpdate />,
   },
 ];
+
+console.log("Nav items loaded:", navItems); // Add this line for debugging
