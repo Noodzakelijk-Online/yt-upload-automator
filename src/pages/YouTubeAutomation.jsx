@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import TranscriptionSummary from '@/components/TranscriptionSummary';
 
 const YouTubeAutomation = () => {
   const [videoFile, setVideoFile] = useState(null);
@@ -12,6 +13,8 @@ const YouTubeAutomation = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
+  const [transcription, setTranscription] = useState('');
+  const [summary, setSummary] = useState('');
 
   const handleVideoUpload = (event) => {
     const file = event.target.files[0];
@@ -20,9 +23,15 @@ const YouTubeAutomation = () => {
     setThumbnailUrl("/placeholder.svg");
   };
 
+  const handleTranscriptionComplete = (newTranscription, newSummary) => {
+    setTranscription(newTranscription);
+    setSummary(newSummary);
+    setDescription(`${newSummary}\n\nTranscript:\n${newTranscription}`);
+  };
+
   const handleSubmit = () => {
     // TODO: Implement actual video upload and metadata submission
-    console.log('Submitting video:', { videoFile, title, description, tags });
+    console.log('Submitting video:', { videoFile, title, description, tags, transcription, summary });
   };
 
   return (
@@ -39,6 +48,10 @@ const YouTubeAutomation = () => {
           <Input id="video-upload" type="file" accept="video/*" onChange={handleVideoUpload} className="mt-2" />
         </CardContent>
       </Card>
+
+      {videoFile && (
+        <TranscriptionSummary videoFile={videoFile} onTranscriptionComplete={handleTranscriptionComplete} />
+      )}
 
       {thumbnailUrl && (
         <>
