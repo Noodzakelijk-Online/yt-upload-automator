@@ -4,38 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 
-const TranscriptionSummary = ({ videoFile, onTranscriptionComplete }) => {
-  const [transcription, setTranscription] = useState('');
-  const [summary, setSummary] = useState('');
-  const [progress, setProgress] = useState(0);
-  const [speakers, setSpeakers] = useState([]);
-
-  const transcriptionServices = [
-    { name: 'Web Speech API', transcribe: webSpeechTranscribe },
-    { name: 'Mozilla DeepSpeech', transcribe: mozillaDeepSpeechTranscribe },
-    { name: 'Vosk', transcribe: voskTranscribe },
-  ];
-
-  const transcribeAudio = async () => {
-    setProgress(0);
-    let transcriptions = [];
-
-    for (let i = 0; i < transcriptionServices.length; i++) {
-      const service = transcriptionServices[i];
-      const result = await service.transcribe(videoFile);
-      transcriptions.push(result);
-      setProgress((i + 1) / transcriptionServices.length * 100);
-    }
-
-    const { consolidatedTranscription, identifiedSpeakers } = consolidateTranscriptions(transcriptions);
-    setTranscription(consolidatedTranscription);
-    setSpeakers(identifiedSpeakers);
-
-    const generatedSummary = await generateSummary(consolidatedTranscription);
-    setSummary(generatedSummary);
-
-    onTranscriptionComplete(consolidatedTranscription, generatedSummary, identifiedSpeakers);
-  };
+const TranscriptionSummary = ({ transcription, summary, speakers }) => {
 
   const webSpeechTranscribe = async (file) => {
     // Implement Web Speech API transcription with speaker diarization
