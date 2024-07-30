@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -22,7 +23,8 @@ const YouTubeAutomation = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState([]);
+  const [playlistName, setPlaylistName] = useState('');
   const [transcription, setTranscription] = useState('');
   const [summary, setSummary] = useState('');
   const [speakers, setSpeakers] = useState([]);
@@ -83,10 +85,25 @@ const YouTubeAutomation = () => {
   };
 
   const generateKeywordSuggestions = async () => {
-    // TODO: Implement actual keyword suggestion generation
     console.log('Generating keyword suggestions');
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setTags('suggested,keywords,tags');
+    // Simulating a keyword planner API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  
+    // Generate 25 tags based on title, description, playlist name, and general topic
+    const keywordSources = [title, description, playlistName, 'youtube', 'video'];
+    const generatedTags = [];
+  
+    while (generatedTags.length < 25) {
+      const randomSource = keywordSources[Math.floor(Math.random() * keywordSources.length)];
+      const words = randomSource.split(' ');
+      const tag = words[Math.floor(Math.random() * words.length)].toLowerCase();
+    
+      if (!generatedTags.includes(tag) && tag.length > 2) {
+        generatedTags.push(tag);
+      }
+    }
+  
+    setTags(generatedTags);
   };
 
   const handleTranscriptionComplete = (newTranscription, newSummary, identifiedSpeakers) => {
@@ -189,12 +206,23 @@ const YouTubeAutomation = () => {
                 <Textarea id="video-description" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <Label htmlFor="video-tags">Tags (comma-separated)</Label>
-                <Input id="video-tags" value={tags} onChange={(e) => setTags(e.target.value)} className="mt-1" />
+                <Label htmlFor="playlist-name">Playlist Name</Label>
+                <Input id="playlist-name" value={playlistName} onChange={(e) => setPlaylistName(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label>Tags</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                <Button onClick={generateKeywordSuggestions} className="mt-2">Generate Tags</Button>
               </div>
             </CardContent>
           </Card>
-          <KeywordSuggestions onSuggest={(keywords) => setTags(keywords.join(', '))} />
+          <KeywordSuggestions tags={tags} onGenerate={generateKeywordSuggestions} />
           <ThumbnailGenerator videoFile={videoFile} onGenerate={setThumbnailUrl} />
         </TabsContent>
         <TabsContent value="social">
@@ -220,7 +248,8 @@ const YouTubeAutomation = () => {
           <div className="space-y-2">
             <p><strong>Title:</strong> {title}</p>
             <p><strong>Description:</strong> {description}</p>
-            <p><strong>Tags:</strong> {tags}</p>
+            <p><strong>Playlist:</strong> {playlistName}</p>
+            <p><strong>Tags:</strong> {tags.join(', ')}</p>
             <p><strong>Scheduled Time:</strong> {scheduledTime ? scheduledTime.toLocaleString() : 'Not scheduled'}</p>
           </div>
         </CardContent>
