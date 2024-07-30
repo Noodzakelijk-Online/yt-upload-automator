@@ -102,6 +102,12 @@ const YouTubeAutomation = () => {
     setDescription(`${summary}\n\nSpeakers: ${speakerInfo}\n\n${socialMediaLinks}\n\nTranscript:\n${transcription}`);
   };
 
+  const fetchAnalyticsData = async () => {
+    // TODO: Implement actual analytics data fetching
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+    return { views: 1000, likes: 100, comments: 50 };
+  };
+
   const generateThumbnail = async (file) => {
     // TODO: Implement actual thumbnail generation
     setThumbnailUrl("/placeholder.svg");
@@ -159,7 +165,12 @@ const YouTubeAutomation = () => {
           </Card>
         </TabsContent>
         <TabsContent value="transcribe">
-          <TranscriptionSummary videoFile={videoFile} onTranscriptionComplete={handleTranscriptionComplete} />
+          <TranscriptionSummary
+            transcription={transcription}
+            summary={summary}
+            speakers={speakers}
+            onTranscriptionComplete={handleTranscriptionComplete}
+          />
         </TabsContent>
         <TabsContent value="metadata">
           <AIMetadataGenerator onGenerate={handleAIMetadataGeneration} />

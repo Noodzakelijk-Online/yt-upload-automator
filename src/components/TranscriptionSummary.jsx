@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 
 const TranscriptionSummary = ({ transcription, summary, speakers }) => {
+  const [progress, setProgress] = useState(0);
 
   const webSpeechTranscribe = async (file) => {
     // Implement Web Speech API transcription with speaker diarization
@@ -52,6 +53,31 @@ const TranscriptionSummary = ({ transcription, summary, speakers }) => {
   const generateSummary = async (transcription) => {
     // Implement summary generation logic
     return "This is a 4-5 sentence summary of the video content, mentioning key points from different speakers.";
+  };
+
+  const transcribeAudio = async () => {
+    setProgress(0);
+    const file = new File([""], "dummy.mp3", { type: "audio/mp3" });
+    
+    const webSpeechResult = await webSpeechTranscribe(file);
+    setProgress(33);
+    
+    const mozillaResult = await mozillaDeepSpeechTranscribe(file);
+    setProgress(66);
+    
+    const voskResult = await voskTranscribe(file);
+    setProgress(100);
+    
+    const { consolidatedTranscription, identifiedSpeakers } = consolidateTranscriptions([
+      webSpeechResult,
+      mozillaResult,
+      voskResult
+    ]);
+    
+    const generatedSummary = await generateSummary(consolidatedTranscription);
+    
+    // Update the parent component with the results
+    onTranscriptionComplete(consolidatedTranscription, generatedSummary, identifiedSpeakers);
   };
 
   return (
