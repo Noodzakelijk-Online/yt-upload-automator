@@ -68,45 +68,39 @@ const YouTubeAutomation = () => {
     setIsProcessing(true);
     setProgress(0);
 
-    const totalSteps = 4;
-    const stepDuration = 60000 / totalSteps; // 15 seconds per step
+    const totalDuration = 60000; // 60 seconds
+    const startTime = Date.now();
 
-    const updateProgress = (step) => {
-      setProgress((step / totalSteps) * 100);
+    const updateProgress = () => {
+      const elapsedTime = Date.now() - startTime;
+      const newProgress = Math.min((elapsedTime / totalDuration) * 100, 100);
+      setProgress(newProgress);
     };
 
-    timerRef.current = setTimeout(() => {
-      setIsProcessing(false);
-      setProgress(100);
-    }, 60000);
+    const progressInterval = setInterval(updateProgress, 100); // Update every 100ms
 
     try {
-      updateProgress(0);
-      await generateThumbnail(file);
-      
-      updateProgress(1);
-      await handleTranscriptionComplete(await generateTranscription(file));
-      
-      updateProgress(2);
-      await generateAIMetadata();
-      
-      updateProgress(3);
-      await generateKeywordSuggestions();
-      
-      updateProgress(4);
+      await Promise.all([
+        generateThumbnail(file),
+        generateTranscription(file).then(handleTranscriptionComplete),
+        generateAIMetadata(),
+        generateKeywordSuggestions()
+      ]);
+
       console.log('Automation process completed');
     } catch (error) {
       console.error('Error during automation process:', error);
     } finally {
-      clearTimeout(timerRef.current);
+      clearInterval(progressInterval);
       setIsProcessing(false);
+      setProgress(100);
     }
   };
 
   const generateTranscription = async (file) => {
-    // TODO: Implement actual transcription generation
     console.log('Generating transcription');
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Simulating a fast transcription process
+    await new Promise(resolve => setTimeout(resolve, 200));
     return {
       transcription: 'This is a sample transcription.',
       summary: 'This is a sample summary.',
@@ -115,22 +109,19 @@ const YouTubeAutomation = () => {
   };
 
   const generateAIMetadata = async () => {
-    // TODO: Implement actual AI metadata generation
     console.log('Generating AI metadata');
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Simulating a fast AI metadata generation
+    await new Promise(resolve => setTimeout(resolve, 100));
     handleAIMetadataGeneration('AI Generated Title', 'AI Generated Description', 'ai,generated,tags');
   };
 
   const generateKeywordSuggestions = useCallback(async () => {
     console.log('Generating keyword suggestions');
-    // Simulating a keyword planner API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  
-    // Generate tags based on title, description, playlist name, and general topic
+    // Simulating a fast keyword suggestion process
     const keywordSources = [title, description, playlistName, 'youtube', 'video'];
     const generatedTags = [];
   
-    while (generatedTags.length < 25) {
+    for (let i = 0; i < 25 && generatedTags.length < 25; i++) {
       const randomSource = keywordSources[Math.floor(Math.random() * keywordSources.length)];
       const words = randomSource.split(' ');
       const tag = words[Math.floor(Math.random() * words.length)].toLowerCase();
@@ -141,7 +132,7 @@ const YouTubeAutomation = () => {
     }
   
     setTags(prevTags => {
-      const newTags = [...prevTags, ...generatedTags].slice(0, 25);
+      const newTags = [...new Set([...prevTags, ...generatedTags])].slice(0, 25);
       setNewTagIndex(prevTags.length);
       return newTags;
     });
