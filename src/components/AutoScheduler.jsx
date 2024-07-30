@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Slider } from "@/components/ui/slider";
+import { X } from "lucide-react";
 
 const AutoScheduler = ({ videoData, onSchedule }) => {
   const [playlists, setPlaylists] = useState([]);
@@ -18,9 +21,9 @@ const AutoScheduler = ({ videoData, onSchedule }) => {
   const fetchPlaylists = async () => {
     // TODO: Implement actual playlist fetching from YouTube API
     const mockPlaylists = [
-      { id: 'A', name: 'Playlist A', frequency: 2 },
-      { id: 'B', name: 'Playlist B', frequency: 1 },
-      { id: 'C', name: 'Playlist C', frequency: 3 },
+      { id: 'A', name: 'Playlist A', frequency: 2, startTime: '09:00', endTime: '17:00' },
+      { id: 'B', name: 'Playlist B', frequency: 1, startTime: '12:00', endTime: '20:00' },
+      { id: 'C', name: 'Playlist C', frequency: 3, startTime: '15:00', endTime: '23:00' },
     ];
     setPlaylists(mockPlaylists);
   };
@@ -43,6 +46,22 @@ const AutoScheduler = ({ videoData, onSchedule }) => {
     }
   };
 
+  const updatePlaylistFrequency = (playlistId, newFrequency) => {
+    setPlaylists(playlists.map(playlist =>
+      playlist.id === playlistId ? { ...playlist, frequency: newFrequency } : playlist
+    ));
+  };
+
+  const updatePlaylistTimeRange = (playlistId, startTime, endTime) => {
+    setPlaylists(playlists.map(playlist =>
+      playlist.id === playlistId ? { ...playlist, startTime, endTime } : playlist
+    ));
+  };
+
+  const removePlaylist = (playlistId) => {
+    setPlaylists(playlists.filter(playlist => playlist.id !== playlistId));
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -60,7 +79,7 @@ const AutoScheduler = ({ videoData, onSchedule }) => {
               <SelectItem value="">No Playlist</SelectItem>
               {playlists.map((playlist) => (
                 <SelectItem key={playlist.id} value={playlist.id}>
-                  {playlist.name} ({playlist.frequency}/week)
+                  {playlist.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -75,6 +94,54 @@ const AutoScheduler = ({ videoData, onSchedule }) => {
             onChange={(e) => setScheduledTime(new Date(e.target.value))}
           />
         </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Playlist</TableHead>
+              <TableHead>Frequency (per week)</TableHead>
+              <TableHead>Time Range</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {playlists.map((playlist) => (
+              <TableRow key={playlist.id}>
+                <TableCell>{playlist.name}</TableCell>
+                <TableCell>
+                  <Slider
+                    value={[playlist.frequency]}
+                    onValueChange={(value) => updatePlaylistFrequency(playlist.id, value[0])}
+                    min={1}
+                    max={7}
+                    step={1}
+                    className="w-[100px]"
+                  />
+                  {playlist.frequency}/week
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="time"
+                    value={playlist.startTime}
+                    onChange={(e) => updatePlaylistTimeRange(playlist.id, e.target.value, playlist.endTime)}
+                    className="w-24 inline-block mr-2"
+                  />
+                  -
+                  <Input
+                    type="time"
+                    value={playlist.endTime}
+                    onChange={(e) => updatePlaylistTimeRange(playlist.id, playlist.startTime, e.target.value)}
+                    className="w-24 inline-block ml-2"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="sm" onClick={() => removePlaylist(playlist.id)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
         <Button onClick={handleSchedule}>Set Schedule</Button>
       </CardContent>
     </Card>
