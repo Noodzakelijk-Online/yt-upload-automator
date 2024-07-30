@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -24,6 +25,7 @@ const YouTubeAutomation = () => {
   const [description, setDescription] = useState('');
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
   const [tags, setTags] = useState([]);
+  const [newTagIndex, setNewTagIndex] = useState(null);
   const [playlistName, setPlaylistName] = useState('');
   const [transcription, setTranscription] = useState('');
   const [summary, setSummary] = useState('');
@@ -84,12 +86,12 @@ const YouTubeAutomation = () => {
     handleAIMetadataGeneration('AI Generated Title', 'AI Generated Description', 'ai,generated,tags');
   };
 
-  const generateKeywordSuggestions = async () => {
+  const generateKeywordSuggestions = useCallback(async () => {
     console.log('Generating keyword suggestions');
     // Simulating a keyword planner API call
     await new Promise(resolve => setTimeout(resolve, 1000));
   
-    // Generate 25 tags based on title, description, playlist name, and general topic
+    // Generate tags based on title, description, playlist name, and general topic
     const keywordSources = [title, description, playlistName, 'youtube', 'video'];
     const generatedTags = [];
   
@@ -98,13 +100,40 @@ const YouTubeAutomation = () => {
       const words = randomSource.split(' ');
       const tag = words[Math.floor(Math.random() * words.length)].toLowerCase();
     
-      if (!generatedTags.includes(tag) && tag.length > 2) {
+      if (!tags.includes(tag) && !generatedTags.includes(tag) && tag.length > 2) {
         generatedTags.push(tag);
       }
     }
   
-    setTags(generatedTags);
+    setTags(prevTags => {
+      const newTags = [...prevTags, ...generatedTags].slice(0, 25);
+      setNewTagIndex(prevTags.length);
+      return newTags;
+    });
+  }, [title, description, playlistName, tags]);
+
+  const removeTag = (indexToRemove) => {
+    setTags(prevTags => {
+      const newTags = prevTags.filter((_, index) => index !== indexToRemove);
+      generateKeywordSuggestions();
+      return newTags;
+    });
   };
+
+  useEffect(() => {
+    if (tags.length < 25) {
+      generateKeywordSuggestions();
+    }
+  }, [tags, generateKeywordSuggestions]);
+
+  useEffect(() => {
+    if (newTagIndex !== null) {
+      const timer = setTimeout(() => {
+        setNewTagIndex(null);
+      }, 60000);
+      return () => clearTimeout(timer);
+    }
+  }, [newTagIndex]);
 
   const handleTranscriptionComplete = (newTranscription, newSummary, identifiedSpeakers) => {
     setTranscription(newTranscription);
@@ -213,12 +242,23 @@ const YouTubeAutomation = () => {
                 <Label>Tags</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary">
+                    <Badge 
+                      key={index} 
+                      variant="secondary"
+                      className={`flex items-center ${index === newTagIndex ? 'bg-green-400' : ''}`}
+                    >
                       {tag}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-1 p-0 h-auto"
+                        onClick={() => removeTag(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </Badge>
                   ))}
                 </div>
-                <Button onClick={generateKeywordSuggestions} className="mt-2">Generate Tags</Button>
               </div>
             </CardContent>
           </Card>
