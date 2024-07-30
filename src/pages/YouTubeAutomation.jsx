@@ -13,6 +13,7 @@ import KeywordSuggestions from '@/components/KeywordSuggestions';
 import ScheduleUpload from '@/components/ScheduleUpload';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import RetroactiveUpdate from '@/components/RetroactiveUpdate';
+import SocialMediaLinks from '@/components/SocialMediaLinks';
 import { useQuery } from '@tanstack/react-query';
 
 const YouTubeAutomation = () => {
@@ -20,6 +21,7 @@ const YouTubeAutomation = () => {
   const [thumbnailUrl, setThumbnailUrl] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [socialMediaLinks, setSocialMediaLinks] = useState('');
   const [tags, setTags] = useState('');
   const [transcription, setTranscription] = useState('');
   const [summary, setSummary] = useState('');
@@ -49,7 +51,11 @@ const YouTubeAutomation = () => {
     setSpeakers(identifiedSpeakers);
     
     const speakerInfo = identifiedSpeakers.map(s => `${s.name} (Speaker ${s.id})`).join(', ');
-    setDescription(`${newSummary}\n\nSpeakers: ${speakerInfo}\n\nTranscript:\n${newTranscription}`);
+    updateDescription(newSummary, speakerInfo, newTranscription);
+  };
+
+  const updateDescription = (summary, speakerInfo, transcription) => {
+    setDescription(`${summary}\n\nSpeakers: ${speakerInfo}\n\n${socialMediaLinks}\n\nTranscript:\n${transcription}`);
   };
 
   const generateThumbnail = async (file) => {
@@ -59,8 +65,13 @@ const YouTubeAutomation = () => {
 
   const handleAIMetadataGeneration = (aiTitle, aiDescription, aiTags) => {
     setTitle(aiTitle);
-    setDescription(aiDescription);
+    updateDescription(aiDescription, speakers.map(s => `${s.name} (Speaker ${s.id})`).join(', '), transcription);
     setTags(aiTags);
+  };
+
+  const handleSocialMediaUpdate = (links) => {
+    setSocialMediaLinks(links);
+    updateDescription(summary, speakers.map(s => `${s.name} (Speaker ${s.id})`).join(', '), transcription);
   };
 
   const handleScheduleChange = (date) => {
@@ -82,10 +93,11 @@ const YouTubeAutomation = () => {
       <h1 className="text-3xl font-bold mb-6">YouTube Video Automation</h1>
       
       <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="upload">Upload</TabsTrigger>
           <TabsTrigger value="transcribe">Transcribe</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
+          <TabsTrigger value="social">Social Media</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="retroactive">Retroactive</TabsTrigger>
@@ -129,6 +141,9 @@ const YouTubeAutomation = () => {
           </Card>
           <KeywordSuggestions onSuggest={(keywords) => setTags(keywords.join(', '))} />
           <ThumbnailGenerator videoFile={videoFile} onGenerate={setThumbnailUrl} />
+        </TabsContent>
+        <TabsContent value="social">
+          <SocialMediaLinks onUpdate={handleSocialMediaUpdate} />
         </TabsContent>
         <TabsContent value="schedule">
           <ScheduleUpload onSchedule={handleScheduleChange} />
