@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import TranscriptionSummary from '@/components/TranscriptionSummary';
 import ThumbnailGenerator from '@/components/ThumbnailGenerator';
 import AIMetadataGenerator from '@/components/AIMetadataGenerator';
@@ -31,6 +32,9 @@ const YouTubeAutomation = () => {
   const [summary, setSummary] = useState('');
   const [speakers, setSpeakers] = useState([]);
   const [scheduledTime, setScheduledTime] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const timerRef = useRef(null);
 
   const { data: analyticsData } = useQuery({
     queryKey: ['analytics'],
@@ -61,11 +65,42 @@ const YouTubeAutomation = () => {
 
   const startAutomationProcess = async (file) => {
     console.log('Starting automation process');
-    await generateThumbnail(file);
-    await handleTranscriptionComplete(await generateTranscription(file));
-    await generateAIMetadata();
-    await generateKeywordSuggestions();
-    console.log('Automation process completed');
+    setIsProcessing(true);
+    setProgress(0);
+
+    const totalSteps = 4;
+    const stepDuration = 60000 / totalSteps; // 15 seconds per step
+
+    const updateProgress = (step) => {
+      setProgress((step / totalSteps) * 100);
+    };
+
+    timerRef.current = setTimeout(() => {
+      setIsProcessing(false);
+      setProgress(100);
+    }, 60000);
+
+    try {
+      updateProgress(0);
+      await generateThumbnail(file);
+      
+      updateProgress(1);
+      await handleTranscriptionComplete(await generateTranscription(file));
+      
+      updateProgress(2);
+      await generateAIMetadata();
+      
+      updateProgress(3);
+      await generateKeywordSuggestions();
+      
+      updateProgress(4);
+      console.log('Automation process completed');
+    } catch (error) {
+      console.error('Error during automation process:', error);
+    } finally {
+      clearTimeout(timerRef.current);
+      setIsProcessing(false);
+    }
   };
 
   const generateTranscription = async (file) => {
@@ -125,6 +160,14 @@ const YouTubeAutomation = () => {
       generateKeywordSuggestions();
     }
   }, [tags, generateKeywordSuggestions]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (newTagIndex !== null) {
@@ -187,6 +230,19 @@ const YouTubeAutomation = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">YouTube Video Automation</h1>
+      
+      {isProcessing && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Processing Video</CardTitle>
+            <CardDescription>Automating video upload process</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Progress value={progress} className="w-full" />
+            <p className="text-sm text-center mt-2">Progress: {Math.round(progress)}%</p>
+          </CardContent>
+        </Card>
+      )}
       
       <Tabs defaultValue="upload" className="w-full">
         <TabsList className="grid w-full grid-cols-7">
