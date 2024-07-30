@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useVideoUploadReducer } from '../reducers/videoUploadReducer';
+import { useVideoUploadReducer, initialState } from '../reducers/videoUploadReducer';
 import { useErrorLogger } from '../hooks/useErrorLogger';
 import { generateTranscription, generateAIMetadata, generateKeywordSuggestions } from '../services/videoServices';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -25,31 +25,11 @@ import SocialMediaLinks from '@/components/SocialMediaLinks';
 import { useQuery } from '@tanstack/react-query';
 
 const YouTubeAutomation = () => {
-  const [state, dispatch] = useReducer(useVideoUploadReducer, {
-    videoFile: null,
-    thumbnailUrl: null,
-    title: '',
-    description: '',
-    tags: [],
-    transcription: '',
-    summary: '',
-    speakers: [],
-    scheduledTime: null,
-    isProcessing: false,
-    progress: 0,
-  });
-
+  const [state, dispatch] = useReducer(useVideoUploadReducer, initialState);
   const { errorLogs, addErrorLog } = useErrorLogger();
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
-  const [tags, setTags] = useState([]);
   const [newTagIndex, setNewTagIndex] = useState(null);
   const [playlistName, setPlaylistName] = useState('');
-  const [transcription, setTranscription] = useState('');
-  const [summary, setSummary] = useState('');
-  const [speakers, setSpeakers] = useState([]);
-  const [scheduledTime, setScheduledTime] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
   const timerRef = useRef(null);
 
   const { data: analyticsData } = useQuery({
@@ -70,7 +50,7 @@ const YouTubeAutomation = () => {
       if (!file) {
         throw new Error("No file selected");
       }
-      setVideoFile(file);
+      dispatch({ type: 'SET_VIDEO_FILE', payload: file });
       await uploadVideo(file);
       await startAutomationProcess(file);
     } catch (error) {
@@ -107,7 +87,7 @@ const YouTubeAutomation = () => {
         generateThumbnail(file),
         generateTranscription(file),
         generateAIMetadata(),
-        generateKeywordSuggestions(state.title, state.description, state.playlistName, state.tags)
+        generateKeywordSuggestions(state.title, state.description, playlistName, state.tags)
       ]);
 
       dispatch({ type: 'SET_THUMBNAIL', payload: thumbnail });
@@ -125,68 +105,10 @@ const YouTubeAutomation = () => {
     }
   };
 
-  const generateTranscription = async (file) => {
-    console.log('Generating transcription');
-    try {
-      // Simulating a fast transcription process
-      await new Promise(resolve => setTimeout(resolve, 200));
-      if (Math.random() < 0.1) { // 10% chance of error for demonstration
-        throw new Error("Transcription service unavailable");
-      }
-      return {
-        transcription: 'This is a sample transcription.',
-        summary: 'This is a sample summary.',
-        speakers: [{ id: 1, name: 'Speaker 1' }]
-      };
-    } catch (error) {
-      throw new Error(`Transcription failed: ${error.message}`);
-    }
+  const generateThumbnail = async (file) => {
+    // TODO: Implement actual thumbnail generation
+    return "/placeholder.svg";
   };
-
-  const generateAIMetadata = async () => {
-    console.log('Generating AI metadata');
-    try {
-      // Simulating a fast AI metadata generation
-      await new Promise(resolve => setTimeout(resolve, 100));
-      if (Math.random() < 0.1) { // 10% chance of error for demonstration
-        throw new Error("AI service temporarily overloaded");
-      }
-      handleAIMetadataGeneration('AI Generated Title', 'AI Generated Description', 'ai,generated,tags');
-    } catch (error) {
-      throw new Error(`AI metadata generation failed: ${error.message}`);
-    }
-  };
-
-  const generateKeywordSuggestions = useCallback(async () => {
-    console.log('Generating keyword suggestions');
-    try {
-      // Simulating a fast keyword suggestion process
-      const keywordSources = [title, description, playlistName, 'youtube', 'video'];
-      const generatedTags = [];
-    
-      for (let i = 0; i < 25 && generatedTags.length < 25; i++) {
-        const randomSource = keywordSources[Math.floor(Math.random() * keywordSources.length)];
-        const words = randomSource.split(' ');
-        const tag = words[Math.floor(Math.random() * words.length)].toLowerCase();
-      
-        if (!tags.includes(tag) && !generatedTags.includes(tag) && tag.length > 2) {
-          generatedTags.push(tag);
-        }
-      }
-    
-      if (generatedTags.length === 0) {
-        throw new Error("Failed to generate any valid tags");
-      }
-    
-      setTags(prevTags => {
-        const newTags = [...new Set([...prevTags, ...generatedTags])].slice(0, 25);
-        setNewTagIndex(prevTags.length);
-        return newTags;
-      });
-    } catch (error) {
-      throw new Error(`Keyword suggestion generation failed: ${error.message}`);
-    }
-  }, [title, description, playlistName, tags]);
 
   const removeTag = (indexToRemove) => {
     setTags(prevTags => {
