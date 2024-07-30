@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useVideoUploadReducer } from '../reducers/videoUploadReducer';
+import { useErrorLogger } from '../hooks/useErrorLogger';
+import { generateTranscription, generateAIMetadata, generateKeywordSuggestions } from '../services/videoServices';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -22,22 +25,21 @@ import SocialMediaLinks from '@/components/SocialMediaLinks';
 import { useQuery } from '@tanstack/react-query';
 
 const YouTubeAutomation = () => {
-  const [videoFile, setVideoFile] = useState(null);
-  const [thumbnailUrl, setThumbnailUrl] = useState(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [errorLogs, setErrorLogs] = useState([]);
+  const [state, dispatch] = useReducer(useVideoUploadReducer, {
+    videoFile: null,
+    thumbnailUrl: null,
+    title: '',
+    description: '',
+    tags: [],
+    transcription: '',
+    summary: '',
+    speakers: [],
+    scheduledTime: null,
+    isProcessing: false,
+    progress: 0,
+  });
 
-  const addErrorLog = (process, error) => {
-    const timestamp = new Date().toISOString();
-    const logEntry = {
-      timestamp,
-      process,
-      error: error.message,
-      stack: error.stack,
-    };
-    setErrorLogs(prevLogs => [...prevLogs, logEntry]);
-  };
+  const { errorLogs, addErrorLog } = useErrorLogger();
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
   const [tags, setTags] = useState([]);
   const [newTagIndex, setNewTagIndex] = useState(null);
@@ -89,40 +91,29 @@ const YouTubeAutomation = () => {
   };
 
   const startAutomationProcess = async (file) => {
-    console.log('Starting automation process');
-    setIsProcessing(true);
-    setProgress(0);
-
-    const totalDuration = 60000; // 60 seconds
+    dispatch({ type: 'START_PROCESSING' });
     const startTime = Date.now();
 
     const updateProgress = () => {
       const elapsedTime = Date.now() - startTime;
-      const newProgress = Math.min((elapsedTime / totalDuration) * 100, 100);
-      setProgress(newProgress);
+      const newProgress = Math.min((elapsedTime / 60000) * 100, 100);
+      dispatch({ type: 'UPDATE_PROGRESS', payload: newProgress });
     };
 
-    const progressInterval = setInterval(updateProgress, 100); // Update every 100ms
+    const progressInterval = setInterval(updateProgress, 100);
 
     try {
-      await Promise.all([
-        generateThumbnail(file).catch(error => {
-          addErrorLog("Thumbnail Generation", error);
-          throw error;
-        }),
-        generateTranscription(file).then(handleTranscriptionComplete).catch(error => {
-          addErrorLog("Transcription", error);
-          throw error;
-        }),
-        generateAIMetadata().catch(error => {
-          addErrorLog("AI Metadata Generation", error);
-          throw error;
-        }),
-        generateKeywordSuggestions().catch(error => {
-          addErrorLog("Keyword Suggestion", error);
-          throw error;
-        })
+      const [thumbnail, transcriptionData, metadata, keywords] = await Promise.all([
+        generateThumbnail(file),
+        generateTranscription(file),
+        generateAIMetadata(),
+        generateKeywordSuggestions(state.title, state.description, state.playlistName, state.tags)
       ]);
+
+      dispatch({ type: 'SET_THUMBNAIL', payload: thumbnail });
+      handleTranscriptionComplete(transcriptionData);
+      handleAIMetadataGeneration(metadata.title, metadata.description, metadata.tags);
+      dispatch({ type: 'SET_TAGS', payload: keywords });
 
       console.log('Automation process completed');
     } catch (error) {
@@ -130,8 +121,7 @@ const YouTubeAutomation = () => {
       addErrorLog("Automation Process", error);
     } finally {
       clearInterval(progressInterval);
-      setIsProcessing(false);
-      setProgress(100);
+      dispatch({ type: 'END_PROCESSING' });
     }
   };
 
