@@ -1,11 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TranscriptionSummary from '@/components/TranscriptionSummary';
+import ThumbnailGenerator from '@/components/ThumbnailGenerator';
+import AIMetadataGenerator from '@/components/AIMetadataGenerator';
+import KeywordSuggestions from '@/components/KeywordSuggestions';
+import ScheduleUpload from '@/components/ScheduleUpload';
+import AnalyticsDashboard from '@/components/AnalyticsDashboard';
+import { useQuery } from '@tanstack/react-query';
 
 const YouTubeAutomation = () => {
   const [videoFile, setVideoFile] = useState(null);
@@ -15,12 +22,23 @@ const YouTubeAutomation = () => {
   const [tags, setTags] = useState('');
   const [transcription, setTranscription] = useState('');
   const [summary, setSummary] = useState('');
+  const [scheduledTime, setScheduledTime] = useState(null);
+
+  const { data: analyticsData } = useQuery({
+    queryKey: ['analytics'],
+    queryFn: fetchAnalyticsData,
+    enabled: false, // Only fetch when needed
+  });
+
+  useEffect(() => {
+    if (videoFile) {
+      generateThumbnail(videoFile);
+    }
+  }, [videoFile]);
 
   const handleVideoUpload = (event) => {
     const file = event.target.files[0];
     setVideoFile(file);
-    // TODO: Implement actual thumbnail generation
-    setThumbnailUrl("/placeholder.svg");
   };
 
   const handleTranscriptionComplete = (newTranscription, newSummary) => {
@@ -29,96 +47,130 @@ const YouTubeAutomation = () => {
     setDescription(`${newSummary}\n\nTranscript:\n${newTranscription}`);
   };
 
+  const generateThumbnail = async (file) => {
+    // TODO: Implement actual thumbnail generation
+    setThumbnailUrl("/placeholder.svg");
+  };
+
+  const handleAIMetadataGeneration = (aiTitle, aiDescription, aiTags) => {
+    setTitle(aiTitle);
+    setDescription(aiDescription);
+    setTags(aiTags);
+  };
+
+  const handleScheduleChange = (date) => {
+    setScheduledTime(date);
+  };
+
   const handleSubmit = () => {
     // TODO: Implement actual video upload and metadata submission
-    console.log('Submitting video:', { videoFile, title, description, tags, transcription, summary });
+    console.log('Submitting video:', { videoFile, title, description, tags, transcription, summary, scheduledTime });
+  };
+
+  const fetchAnalyticsData = async () => {
+    // TODO: Implement actual analytics data fetching
+    return { views: 1000, likes: 100, comments: 50 };
   };
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">YouTube Video Automation</h1>
       
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Step 1: Upload Video</CardTitle>
-          <CardDescription>Select your video file to begin the automation process.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Label htmlFor="video-upload">Choose video file</Label>
-          <Input id="video-upload" type="file" accept="video/*" onChange={handleVideoUpload} className="mt-2" />
-        </CardContent>
-      </Card>
-
-      {videoFile && (
-        <TranscriptionSummary videoFile={videoFile} onTranscriptionComplete={handleTranscriptionComplete} />
-      )}
-
-      {thumbnailUrl && (
-        <>
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Step 2: Video Details</CardTitle>
-              <CardDescription>Enter the details for your video.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="video-title">Video Title</Label>
-                <Input id="video-title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1" />
-              </div>
-              <div>
-                <Label htmlFor="video-description">Video Description</Label>
-                <Textarea id="video-description" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1" />
-              </div>
-              <div>
-                <Label htmlFor="video-tags">Tags (comma-separated)</Label>
-                <Input id="video-tags" value={tags} onChange={(e) => setTags(e.target.value)} className="mt-1" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Generated Thumbnail</CardTitle>
-              <CardDescription>This is a preview of your automatically generated thumbnail.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <img src={thumbnailUrl} alt="Generated Thumbnail" className="w-full max-w-md mx-auto object-cover" />
-            </CardContent>
-          </Card>
-
+      <Tabs defaultValue="upload" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="upload">Upload</TabsTrigger>
+          <TabsTrigger value="transcribe">Transcribe</TabsTrigger>
+          <TabsTrigger value="metadata">Metadata</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
+        <TabsContent value="upload">
           <Card>
             <CardHeader>
-              <CardTitle>Step 3: Review and Submit</CardTitle>
-              <CardDescription>Review your video details before submitting.</CardDescription>
+              <CardTitle>Step 1: Upload Video</CardTitle>
+              <CardDescription>Select your video file to begin the automation process.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <p><strong>Title:</strong> {title}</p>
-                <p><strong>Description:</strong> {description}</p>
-                <p><strong>Tags:</strong> {tags}</p>
-              </div>
+              <Label htmlFor="video-upload">Choose video file</Label>
+              <Input id="video-upload" type="file" accept="video/*" onChange={handleVideoUpload} className="mt-2" />
             </CardContent>
-            <CardFooter>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button>Submit Video</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to submit this video?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action will upload your video and set its metadata on YouTube.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleSubmit}>Submit</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </CardFooter>
           </Card>
-        </>
+        </TabsContent>
+        <TabsContent value="transcribe">
+          {videoFile && (
+            <TranscriptionSummary videoFile={videoFile} onTranscriptionComplete={handleTranscriptionComplete} />
+          )}
+        </TabsContent>
+        <TabsContent value="metadata">
+          {videoFile && (
+            <>
+              <AIMetadataGenerator onGenerate={handleAIMetadataGeneration} />
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>Video Details</CardTitle>
+                  <CardDescription>Edit the AI-generated metadata for your video.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="video-title">Video Title</Label>
+                    <Input id="video-title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="video-description">Video Description</Label>
+                    <Textarea id="video-description" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="video-tags">Tags (comma-separated)</Label>
+                    <Input id="video-tags" value={tags} onChange={(e) => setTags(e.target.value)} className="mt-1" />
+                  </div>
+                </CardContent>
+              </Card>
+              <KeywordSuggestions onSuggest={(keywords) => setTags(keywords.join(', '))} />
+              <ThumbnailGenerator videoFile={videoFile} onGenerate={setThumbnailUrl} />
+            </>
+          )}
+        </TabsContent>
+        <TabsContent value="schedule">
+          <ScheduleUpload onSchedule={handleScheduleChange} />
+        </TabsContent>
+        <TabsContent value="analytics">
+          <AnalyticsDashboard data={analyticsData} />
+        </TabsContent>
+      </Tabs>
+      {videoFile && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Review and Submit</CardTitle>
+            <CardDescription>Review your video details before submitting.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p><strong>Title:</strong> {title}</p>
+              <p><strong>Description:</strong> {description}</p>
+              <p><strong>Tags:</strong> {tags}</p>
+              <p><strong>Scheduled Time:</strong> {scheduledTime ? scheduledTime.toLocaleString() : 'Not scheduled'}</p>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button>Submit Video</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure you want to submit this video?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action will upload your video and set its metadata on YouTube.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSubmit}>Submit</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardFooter>
+        </Card>
       )}
     </div>
   );
