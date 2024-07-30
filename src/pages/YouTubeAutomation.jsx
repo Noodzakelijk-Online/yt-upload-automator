@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +26,18 @@ const YouTubeAutomation = () => {
   const [thumbnailUrl, setThumbnailUrl] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [errorLogs, setErrorLogs] = useState([]);
+
+  const addErrorLog = (process, error) => {
+    const timestamp = new Date().toISOString();
+    const logEntry = {
+      timestamp,
+      process,
+      error: error.message,
+      stack: error.stack,
+    };
+    setErrorLogs(prevLogs => [...prevLogs, logEntry]);
+  };
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
   const [tags, setTags] = useState([]);
   const [newTagIndex, setNewTagIndex] = useState(null);
@@ -49,18 +63,29 @@ const YouTubeAutomation = () => {
   }, [videoFile]);
 
   const handleVideoUpload = async (event) => {
-    const file = event.target.files[0];
-    setVideoFile(file);
-    await uploadVideo(file);
-    startAutomationProcess(file);
+    try {
+      const file = event.target.files[0];
+      if (!file) {
+        throw new Error("No file selected");
+      }
+      setVideoFile(file);
+      await uploadVideo(file);
+      await startAutomationProcess(file);
+    } catch (error) {
+      addErrorLog("Video Upload", error);
+    }
   };
 
   const uploadVideo = async (file) => {
-    // TODO: Implement actual video upload to YouTube
-    console.log('Uploading video:', file.name);
-    // Simulating upload time
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    console.log('Video uploaded successfully');
+    try {
+      // TODO: Implement actual video upload to YouTube
+      console.log('Uploading video:', file.name);
+      // Simulating upload time
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Video uploaded successfully');
+    } catch (error) {
+      throw new Error(`Failed to upload video: ${error.message}`);
+    }
   };
 
   const startAutomationProcess = async (file) => {
@@ -81,15 +106,28 @@ const YouTubeAutomation = () => {
 
     try {
       await Promise.all([
-        generateThumbnail(file),
-        generateTranscription(file).then(handleTranscriptionComplete),
-        generateAIMetadata(),
-        generateKeywordSuggestions()
+        generateThumbnail(file).catch(error => {
+          addErrorLog("Thumbnail Generation", error);
+          throw error;
+        }),
+        generateTranscription(file).then(handleTranscriptionComplete).catch(error => {
+          addErrorLog("Transcription", error);
+          throw error;
+        }),
+        generateAIMetadata().catch(error => {
+          addErrorLog("AI Metadata Generation", error);
+          throw error;
+        }),
+        generateKeywordSuggestions().catch(error => {
+          addErrorLog("Keyword Suggestion", error);
+          throw error;
+        })
       ]);
 
       console.log('Automation process completed');
     } catch (error) {
       console.error('Error during automation process:', error);
+      addErrorLog("Automation Process", error);
     } finally {
       clearInterval(progressInterval);
       setIsProcessing(false);
@@ -99,43 +137,65 @@ const YouTubeAutomation = () => {
 
   const generateTranscription = async (file) => {
     console.log('Generating transcription');
-    // Simulating a fast transcription process
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return {
-      transcription: 'This is a sample transcription.',
-      summary: 'This is a sample summary.',
-      speakers: [{ id: 1, name: 'Speaker 1' }]
-    };
+    try {
+      // Simulating a fast transcription process
+      await new Promise(resolve => setTimeout(resolve, 200));
+      if (Math.random() < 0.1) { // 10% chance of error for demonstration
+        throw new Error("Transcription service unavailable");
+      }
+      return {
+        transcription: 'This is a sample transcription.',
+        summary: 'This is a sample summary.',
+        speakers: [{ id: 1, name: 'Speaker 1' }]
+      };
+    } catch (error) {
+      throw new Error(`Transcription failed: ${error.message}`);
+    }
   };
 
   const generateAIMetadata = async () => {
     console.log('Generating AI metadata');
-    // Simulating a fast AI metadata generation
-    await new Promise(resolve => setTimeout(resolve, 100));
-    handleAIMetadataGeneration('AI Generated Title', 'AI Generated Description', 'ai,generated,tags');
+    try {
+      // Simulating a fast AI metadata generation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      if (Math.random() < 0.1) { // 10% chance of error for demonstration
+        throw new Error("AI service temporarily overloaded");
+      }
+      handleAIMetadataGeneration('AI Generated Title', 'AI Generated Description', 'ai,generated,tags');
+    } catch (error) {
+      throw new Error(`AI metadata generation failed: ${error.message}`);
+    }
   };
 
   const generateKeywordSuggestions = useCallback(async () => {
     console.log('Generating keyword suggestions');
-    // Simulating a fast keyword suggestion process
-    const keywordSources = [title, description, playlistName, 'youtube', 'video'];
-    const generatedTags = [];
-  
-    for (let i = 0; i < 25 && generatedTags.length < 25; i++) {
-      const randomSource = keywordSources[Math.floor(Math.random() * keywordSources.length)];
-      const words = randomSource.split(' ');
-      const tag = words[Math.floor(Math.random() * words.length)].toLowerCase();
+    try {
+      // Simulating a fast keyword suggestion process
+      const keywordSources = [title, description, playlistName, 'youtube', 'video'];
+      const generatedTags = [];
     
-      if (!tags.includes(tag) && !generatedTags.includes(tag) && tag.length > 2) {
-        generatedTags.push(tag);
+      for (let i = 0; i < 25 && generatedTags.length < 25; i++) {
+        const randomSource = keywordSources[Math.floor(Math.random() * keywordSources.length)];
+        const words = randomSource.split(' ');
+        const tag = words[Math.floor(Math.random() * words.length)].toLowerCase();
+      
+        if (!tags.includes(tag) && !generatedTags.includes(tag) && tag.length > 2) {
+          generatedTags.push(tag);
+        }
       }
+    
+      if (generatedTags.length === 0) {
+        throw new Error("Failed to generate any valid tags");
+      }
+    
+      setTags(prevTags => {
+        const newTags = [...new Set([...prevTags, ...generatedTags])].slice(0, 25);
+        setNewTagIndex(prevTags.length);
+        return newTags;
+      });
+    } catch (error) {
+      throw new Error(`Keyword suggestion generation failed: ${error.message}`);
     }
-  
-    setTags(prevTags => {
-      const newTags = [...new Set([...prevTags, ...generatedTags])].slice(0, 25);
-      setNewTagIndex(prevTags.length);
-      return newTags;
-    });
   }, [title, description, playlistName, tags]);
 
   const removeTag = (indexToRemove) => {
@@ -360,6 +420,28 @@ const YouTubeAutomation = () => {
           </AlertDialog>
         </CardFooter>
       </Card>
+
+      {errorLogs.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Error Logs</CardTitle>
+            <CardDescription>Detailed error information for debugging</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[200px]">
+              {errorLogs.map((log, index) => (
+                <Alert key={index} variant="destructive" className="mb-2">
+                  <AlertTitle>{log.process} Error - {new Date(log.timestamp).toLocaleString()}</AlertTitle>
+                  <AlertDescription>
+                    <p><strong>Error:</strong> {log.error}</p>
+                    <p><strong>Stack Trace:</strong> {log.stack}</p>
+                  </AlertDescription>
+                </Alert>
+              ))}
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
