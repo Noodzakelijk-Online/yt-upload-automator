@@ -16,7 +16,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import TranscriptionSummary from '@/components/TranscriptionSummary';
-import { useState } from 'react';
 import ThumbnailGenerator from '@/components/ThumbnailGenerator';
 import AIMetadataGenerator from '@/components/AIMetadataGenerator';
 import KeywordSuggestions from '@/components/KeywordSuggestions';
@@ -85,7 +84,7 @@ const YouTubeAutomation = () => {
     } catch (error) {
       throw new Error(`Failed to upload video: ${error.message}`);
     }
-  }, [dispatch, addErrorLog, generateThumbnail, handleTranscriptionComplete, handleAIMetadataGeneration]);
+  };
 
   const startAutomationProcess = useCallback(async (file) => {
     console.log('Starting automation process');
@@ -219,7 +218,8 @@ const YouTubeAutomation = () => {
       scheduledTime: state.scheduledTime,
       playlist: state.playlist
     });
-  };
+    toast.success('Video submitted successfully!');
+  }, [state]);
 
   const fetchAnalyticsData = async () => {
     // TODO: Implement actual analytics data fetching
@@ -230,15 +230,15 @@ const YouTubeAutomation = () => {
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">YouTube Video Automation</h1>
       
-      {isProcessing && (
+      {state.isProcessing && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Processing Video</CardTitle>
             <CardDescription>Automating video upload process</CardDescription>
           </CardHeader>
           <CardContent>
-            <Progress value={progress} className="w-full" />
-            <p className="text-sm text-center mt-2">Progress: {Math.round(progress)}%</p>
+            <Progress value={state.progress} className="w-full" />
+            <p className="text-sm text-center mt-2">Progress: {Math.round(state.progress)}%</p>
           </CardContent>
         </Card>
       )}
@@ -272,7 +272,7 @@ const YouTubeAutomation = () => {
           />
         </TabsContent>
         <TabsContent value="metadata">
-          <AIMetadataGenerator onGenerate={handleAIMetadataGeneration} transcription={transcription} />
+          <AIMetadataGenerator onGenerate={handleAIMetadataGeneration} transcription={state.transcription} />
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Video Details</CardTitle>
@@ -328,8 +328,8 @@ const YouTubeAutomation = () => {
               </div>
             </CardContent>
           </Card>
-          <KeywordSuggestions tags={tags} onGenerate={generateKeywordSuggestions} />
-          <ThumbnailGenerator videoFile={videoFile} onGenerate={setThumbnailUrl} />
+          <KeywordSuggestions tags={state.tags} onGenerate={() => generateKeywordSuggestions(state.title, state.description, state.playlist, state.tags)} />
+          <ThumbnailGenerator videoFile={state.videoFile} onGenerate={(url) => dispatch({ type: 'SET_THUMBNAIL', payload: url })} />
         </TabsContent>
         <TabsContent value="social">
           <SocialMediaLinks onUpdate={handleSocialMediaUpdate} />

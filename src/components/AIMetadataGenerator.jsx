@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateAIMetadata } from '../services/videoServices';
 
+import { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { generateAIMetadata } from '../services/videoServices';
+
 const AIMetadataGenerator = ({ onGenerate, transcription }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
