@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef, useReducer, useMemo } from 'react';
+import React, { useEffect, useCallback, useRef, useReducer, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { videoUploadReducer, initialState } from '../reducers/videoUploadReducer';
 import { useErrorLogger } from '../hooks/useErrorLogger';
-import { generateTranscription, generateAIMetadata, generateKeywordSuggestions, detectPlaylist } from '../services/videoServices';
+import { generateTranscription, generateAIMetadata, generateKeywordSuggestions, detectPlaylist, generateThumbnail } from '../services/videoServices';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +59,7 @@ const YouTubeAutomation = () => {
         dispatch({ type: 'SET_THUMBNAIL', payload: thumbnailUrl });
       });
     }
-  }, [state.videoFile, generateThumbnail, dispatch]);
+  }, [state.videoFile, dispatch]);
 
   const handleVideoUpload = useCallback(async (event) => {
     try {
@@ -136,7 +136,7 @@ const YouTubeAutomation = () => {
       clearInterval(progressInterval);
       dispatch({ type: 'END_PROCESSING' });
     }
-  }, [dispatch, socialMediaLinks, updateDescription]);
+  }, [dispatch, state.summary, state.speakers, state.transcription, updateDescription]);
 
   const generateThumbnail = useCallback(async (file) => {
     if (!file) {
@@ -150,7 +150,7 @@ const YouTubeAutomation = () => {
   const removeTag = useCallback((indexToRemove) => {
     dispatch({ type: 'SET_TAGS', payload: state.tags.filter((_, index) => index !== indexToRemove) });
     generateKeywordSuggestions(state.title, state.description, state.playlist, state.tags);
-  }, [state.tags, state.title, state.description, state.playlist, dispatch]);
+  }, [state.tags, state.title, state.description, state.playlist]);
 
   useEffect(() => {
     if (state.tags.length < 25) {
@@ -341,6 +341,9 @@ const YouTubeAutomation = () => {
           </Card>
           <KeywordSuggestions tags={state.tags} onGenerate={() => generateKeywordSuggestions(state.title, state.description, state.playlist, state.tags)} />
           <ThumbnailGenerator videoFile={state.videoFile} onGenerate={(url) => dispatch({ type: 'SET_THUMBNAIL', payload: url })} />
+          {state.thumbnailUrl && (
+            <img src={state.thumbnailUrl} alt="Generated Thumbnail" className="mt-4 w-full max-w-md mx-auto object-cover h-48" />
+          )}
         </TabsContent>
         <TabsContent value="social">
           <SocialMediaLinks onUpdate={handleSocialMediaUpdate} />

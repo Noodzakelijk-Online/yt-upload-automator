@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 export const generateTranscription = async (file) => {
   console.log('Generating transcription for file:', file.name);
   try {
@@ -15,7 +17,21 @@ export const generateTranscription = async (file) => {
     return result;
   } catch (error) {
     console.error('Transcription generation failed:', error);
-    throw new Error(`Transcription failed: ${error.message}`);
+    toast.error(`Transcription failed: ${error.message}`);
+    throw error;
+  }
+};
+
+export const generateThumbnail = async (file) => {
+  console.log('Generating thumbnail for file:', file.name);
+  try {
+    // Simulating thumbnail generation
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return "/placeholder.svg";
+  } catch (error) {
+    console.error('Thumbnail generation failed:', error);
+    toast.error(`Thumbnail generation failed: ${error.message}`);
+    throw error;
   }
 };
 
@@ -81,7 +97,8 @@ export const generateAIMetadata = async (transcription) => {
     return result;
   } catch (error) {
     console.error('AI metadata generation failed:', error);
-    throw new Error(`AI metadata generation failed: ${error.message}`);
+    toast.error(`AI metadata generation failed: ${error.message}`);
+    throw error;
   }
 };
 
@@ -157,7 +174,8 @@ export const generateKeywordSuggestions = async (title, description, playlistNam
 
     return generatedTags;
   } catch (error) {
-    throw new Error(`Keyword suggestion generation failed: ${error.message}`);
+    toast.error(`Keyword suggestion generation failed: ${error.message}`);
+    throw error;
   }
 };
 
