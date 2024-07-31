@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import SocialMediaLinks from './SocialMediaLinks';
 
-const RetroactiveUpdate = () => {
+const RetroactiveUpdate = ({ onUpdate }) => {
   const [videos, setVideos] = useState([]);
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
 
@@ -46,6 +46,7 @@ const RetroactiveUpdate = () => {
     const videosToUpdate = videos.filter(v => v.needsUpdate);
     // TODO: Implement actual update logic
     console.log('Updating videos:', videosToUpdate);
+    onUpdate(videosToUpdate);
     
     for (const video of videosToUpdate) {
       const updatedTags = generateTags(video);

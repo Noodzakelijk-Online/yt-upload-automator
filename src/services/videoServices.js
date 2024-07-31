@@ -22,8 +22,8 @@ export const generateTranscription = async (file) => {
   }
 };
 
-export const generateThumbnail = async (file) => {
-  console.log('Generating thumbnail for file:', file.name);
+export const generateThumbnail = async (videoFile) => {
+  console.log('Generating thumbnail for file:', videoFile.name);
   try {
     // Simulating thumbnail generation
     await new Promise(resolve => setTimeout(resolve, 500));

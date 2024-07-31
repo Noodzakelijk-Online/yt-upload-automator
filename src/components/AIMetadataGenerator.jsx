@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateAIMetadata } from '../services/videoServices';
 
-const AIMetadataGenerator = ({ onGenerate, transcription }) => {
+const AIMetadataGenerator = ({ onGenerate }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateMetadata = async () => {
     setIsGenerating(true);
     try {
-      const { title, description, tags } = await generateAIMetadata(transcription);
+      const { title, description, tags } = await generateAIMetadata();
       onGenerate(title, description, tags);
     } catch (error) {
       console.error("Error generating metadata:", error);

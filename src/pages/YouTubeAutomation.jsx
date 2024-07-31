@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 import { videoUploadReducer, initialState } from '../reducers/videoUploadReducer';
 import { useErrorLogger } from '../hooks/useErrorLogger';
 import { generateTranscription, generateAIMetadata, generateKeywordSuggestions, detectPlaylist } from '../services/videoServices';
@@ -76,7 +78,7 @@ const YouTubeAutomation = () => {
       toast.error(`Upload failed: ${error.message}`);
       dispatch({ type: 'END_PROCESSING' });
     }
-  }, [dispatch, addErrorLog]);
+  }, [dispatch, addErrorLog, state.title, state.description, state.playlist, state.tags]);
 
   const uploadVideo = async (file) => {
     try {
@@ -172,7 +174,7 @@ const YouTubeAutomation = () => {
       }, 60000);
       return () => clearTimeout(timer);
     }
-  }, [newTagIndex, setNewTagIndex]);
+  }, [newTagIndex]);
 
   const handleTranscriptionComplete = useCallback((newTranscription, newSummary, identifiedSpeakers) => {
     dispatch({ type: 'SET_TRANSCRIPTION', payload: newTranscription });
@@ -415,8 +417,8 @@ const YouTubeAutomation = () => {
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[200px]">
-              {errorLogs.map((log) => (
-                <Alert key={log.timestamp} variant="destructive" className="mb-2">
+              {errorLogs.map((log, index) => (
+                <Alert key={`${log.timestamp}-${index}`} variant="destructive" className="mb-2">
                   <AlertTitle>{log.process} Error - {new Date(log.timestamp).toLocaleString()}</AlertTitle>
                   <AlertDescription>
                     <p><strong>Error:</strong> {log.error}</p>

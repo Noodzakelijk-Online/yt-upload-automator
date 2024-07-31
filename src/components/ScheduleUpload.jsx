@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -6,10 +6,10 @@ import { Calendar } from "@/components/ui/calendar";
 const ScheduleUpload = ({ onSchedule }) => {
   const [date, setDate] = useState(new Date());
 
-  const handleDateSelect = (newDate) => {
+  const handleDateSelect = useCallback((newDate) => {
     setDate(newDate);
     onSchedule(newDate);
-  };
+  }, [onSchedule]);
 
   return (
     <Card>

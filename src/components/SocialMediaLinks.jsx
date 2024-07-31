@@ -10,7 +10,7 @@ const SocialMediaLinks = ({ onUpdate }) => {
 
   useEffect(() => {
     fetchSocialMediaLinks();
-  }, []);
+  }, [fetchSocialMediaLinks]);
 
   const fetchSocialMediaLinks = async () => {
     setIsLoading(true);
@@ -37,7 +37,9 @@ const SocialMediaLinks = ({ onUpdate }) => {
     return url; // Return corrected URL if needed
   };
 
-  const handleLinkChange = async (platform, newUrl) => {
+  const handleLinkChange = useCallback(async (platform, newUrl) => {
+    // ... existing code ...
+  }, [links, onUpdate]);
     const verifiedUrl = await verifyAndUpdateLink(platform, newUrl);
     setLinks(prevLinks => ({
       ...prevLinks,

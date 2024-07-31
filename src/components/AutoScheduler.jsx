@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,7 +16,7 @@ const AutoScheduler = ({ videoData, onSchedule }) => {
   useEffect(() => {
     fetchPlaylists();
     fetchOptimalScheduleTime();
-  }, []);
+  }, [fetchPlaylists, fetchOptimalScheduleTime]);
 
   const fetchPlaylists = async () => {
     // TODO: Implement actual playlist fetching from YouTube API
@@ -36,9 +36,9 @@ const AutoScheduler = ({ videoData, onSchedule }) => {
     setScheduledTime(mockOptimalTime);
   };
 
-  const handlePlaylistSelect = (playlistId) => {
+  const handlePlaylistSelect = useCallback((playlistId) => {
     setSelectedPlaylist(playlistId);
-  };
+  }, []);
 
   const handleSchedule = () => {
     if (selectedPlaylist && scheduledTime) {

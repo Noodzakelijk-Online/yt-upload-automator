@@ -30,8 +30,8 @@ const KeywordSuggestions = ({ tags, onGenerate }) => {
         </Button>
         {tags.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {tags.map((tag, index) => (
-              <Badge key={index} variant="secondary">
+            {tags.map((tag) => (
+              <Badge key={tag} variant="secondary">
                 {tag}
               </Badge>
             ))}
