@@ -16,6 +16,37 @@ export const generateTranscription = async (file) => {
   }
 };
 
+export const detectPlaylist = async (transcription) => {
+  console.log('Detecting playlist based on transcription');
+  try {
+    // This is a simplified playlist detection. In a real scenario, you'd use more advanced NLP techniques.
+    const keywords = {
+      'tutorial': 'Tutorials',
+      'review': 'Product Reviews',
+      'unboxing': 'Unboxing Videos',
+      'vlog': 'Vlogs',
+      'gaming': 'Gaming Content',
+      'music': 'Music Videos',
+      'news': 'News Updates',
+      'cooking': 'Cooking Tutorials',
+      'travel': 'Travel Vlogs',
+      'tech': 'Tech Reviews'
+    };
+
+    const words = transcription.toLowerCase().split(/\s+/);
+    for (const [keyword, playlist] of Object.entries(keywords)) {
+      if (words.includes(keyword)) {
+        return playlist;
+      }
+    }
+
+    return 'Miscellaneous'; // Default playlist if no match is found
+  } catch (error) {
+    console.error('Error detecting playlist:', error);
+    return 'Miscellaneous'; // Default to a general playlist in case of error
+  }
+};
+
 export const generateAIMetadata = async (transcription) => {
   console.log('Generating AI metadata');
   try {

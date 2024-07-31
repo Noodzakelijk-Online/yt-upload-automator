@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useVideoUploadReducer, initialState } from '../reducers/videoUploadReducer';
 import { useErrorLogger } from '../hooks/useErrorLogger';
-import { generateTranscription, generateAIMetadata, generateKeywordSuggestions } from '../services/videoServices';
+import { generateTranscription, generateAIMetadata, generateKeywordSuggestions, detectPlaylist } from '../services/videoServices';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -84,17 +84,19 @@ const YouTubeAutomation = () => {
     const progressInterval = setInterval(updateProgress, 100);
 
     try {
-      const [thumbnail, transcriptionData, metadata, keywords] = await Promise.all([
+      const [thumbnail, transcriptionData, metadata, keywords, detectedPlaylist] = await Promise.all([
         generateThumbnail(file),
         generateTranscription(file),
         generateAIMetadata(),
-        generateKeywordSuggestions(state.title, state.description, playlistName, state.tags)
+        generateKeywordSuggestions(state.title, state.description, playlistName, state.tags),
+        detectPlaylist(transcriptionData.transcription)
       ]);
 
       dispatch({ type: 'SET_THUMBNAIL', payload: thumbnail });
       handleTranscriptionComplete(transcriptionData);
       handleAIMetadataGeneration(metadata.title, metadata.description, metadata.tags);
       dispatch({ type: 'SET_TAGS', payload: keywords });
+      dispatch({ type: 'SET_PLAYLIST', payload: detectedPlaylist });
 
       console.log('Automation process completed');
     } catch (error) {
@@ -270,8 +272,11 @@ const YouTubeAutomation = () => {
                 <Textarea id="video-description" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <Label htmlFor="playlist-name">Playlist Name</Label>
-                <Input id="playlist-name" value={playlistName} onChange={(e) => setPlaylistName(e.target.value)} className="mt-1" />
+                <Label htmlFor="playlist-name">Detected Playlist</Label>
+                <Input id="playlist-name" value={state.playlist || ''} readOnly className="mt-1" />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Playlist automatically detected based on video content. You can change this manually if needed.
+                </p>
               </div>
               <div>
                 <Label>Tags</Label>
