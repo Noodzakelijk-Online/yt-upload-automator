@@ -122,26 +122,51 @@ const generateTags = (topics, title) => {
 export const generateKeywordSuggestions = async (title, description, playlistName, existingTags) => {
   console.log('Generating keyword suggestions');
   try {
-    // Simulating a fast keyword suggestion process
-    const keywordSources = [title, description, playlistName, 'youtube', 'video'];
+    const currentYear = new Date().getFullYear();
+    const keywordSources = [title, description, playlistName, 'youtube', 'video', currentYear.toString()];
     const generatedTags = [];
-  
-    for (let i = 0; i < 25 && generatedTags.length < 25; i++) {
+    const recycledTags = recycleRelevantTags(existingTags, currentYear);
+
+    // Add recycled tags first
+    generatedTags.push(...recycledTags);
+
+    while (generatedTags.length < 25) {
       const randomSource = keywordSources[Math.floor(Math.random() * keywordSources.length)];
       const words = randomSource.split(' ');
       const tag = words[Math.floor(Math.random() * words.length)].toLowerCase();
-    
+
       if (!existingTags.includes(tag) && !generatedTags.includes(tag) && tag.length > 2) {
         generatedTags.push(tag);
       }
     }
-  
+
     if (generatedTags.length === 0) {
       throw new Error("Failed to generate any valid tags");
     }
-  
+
     return generatedTags;
   } catch (error) {
     throw new Error(`Keyword suggestion generation failed: ${error.message}`);
   }
+};
+
+const recycleRelevantTags = (existingTags, currentYear) => {
+  const recycledTags = [];
+  const nextYear = currentYear + 1;
+
+  existingTags.forEach(tag => {
+    // Update year-specific tags
+    if (tag.match(/^\d{4}$/)) {
+      const tagYear = parseInt(tag);
+      if (tagYear === currentYear || tagYear === currentYear - 1) {
+        recycledTags.push(nextYear.toString());
+      }
+    } 
+    // Recycle other relevant tags (you can add more conditions here)
+    else if (tag.includes('tutorial') || tag.includes('guide') || tag.includes('how-to')) {
+      recycledTags.push(tag);
+    }
+  });
+
+  return recycledTags;
 };
