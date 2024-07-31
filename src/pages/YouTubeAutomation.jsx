@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useVideoUploadReducer, initialState } from '../reducers/videoUploadReducer';
+import { videoUploadReducer, initialState } from '../reducers/videoUploadReducer';
 import { useErrorLogger } from '../hooks/useErrorLogger';
 import { generateTranscription, generateAIMetadata, generateKeywordSuggestions, detectPlaylist } from '../services/videoServices';
-import { useReducer } from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +29,7 @@ import { useQuery } from '@tanstack/react-query';
 
 const YouTubeAutomation = () => {
   console.log('YouTubeAutomation component rendered');
-  const [state, dispatch] = useReducer(useVideoUploadReducer, initialState);
+  const [state, dispatch] = useReducer(videoUploadReducer, initialState);
   const { errorLogs, addErrorLog } = useErrorLogger();
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
   const [newTagIndex, setNewTagIndex] = useState(null);
@@ -40,7 +39,7 @@ const YouTubeAutomation = () => {
     console.log('Current state:', state);
   }, [state]);
 
-  const { data: analyticsData } = useQuery({
+  const { data: analyticsData, refetch: refetchAnalytics } = useQuery({
     queryKey: ['analytics'],
     queryFn: fetchAnalyticsData,
     enabled: false, // Only fetch when needed
@@ -48,11 +47,17 @@ const YouTubeAutomation = () => {
 
   useEffect(() => {
     if (state.videoFile) {
+      refetchAnalytics();
+    }
+  }, [state.videoFile, refetchAnalytics]);
+
+  useEffect(() => {
+    if (state.videoFile) {
       generateThumbnail(state.videoFile);
     }
   }, [state.videoFile]);
 
-  const handleVideoUpload = async (event) => {
+  const handleVideoUpload = useCallback(async (event) => {
     try {
       console.log('handleVideoUpload called');
       const file = event.target.files[0];
@@ -68,7 +73,7 @@ const YouTubeAutomation = () => {
       addErrorLog("Video Upload", error);
       toast.error(`Upload failed: ${error.message}`);
     }
-  };
+  }, [dispatch, addErrorLog]);
 
   const uploadVideo = async (file) => {
     try {
@@ -80,9 +85,9 @@ const YouTubeAutomation = () => {
     } catch (error) {
       throw new Error(`Failed to upload video: ${error.message}`);
     }
-  };
+  }, [dispatch, addErrorLog, generateThumbnail, handleTranscriptionComplete, handleAIMetadataGeneration]);
 
-  const startAutomationProcess = async (file) => {
+  const startAutomationProcess = useCallback(async (file) => {
     console.log('Starting automation process');
     dispatch({ type: 'START_PROCESSING' });
     const startTime = Date.now();
@@ -122,17 +127,17 @@ const YouTubeAutomation = () => {
       clearInterval(progressInterval);
       dispatch({ type: 'END_PROCESSING' });
     }
-  };
+  }, [dispatch, socialMediaLinks, updateDescription]);
 
-  const generateThumbnail = async (file) => {
+  const generateThumbnail = useCallback(async (file) => {
     // TODO: Implement actual thumbnail generation
     return "/placeholder.svg";
-  };
+  }, []);
 
-  const removeTag = (indexToRemove) => {
+  const removeTag = useCallback((indexToRemove) => {
     dispatch({ type: 'SET_TAGS', payload: state.tags.filter((_, index) => index !== indexToRemove) });
     generateKeywordSuggestions(state.title, state.description, state.playlist, state.tags);
-  };
+  }, [state.tags, state.title, state.description, state.playlist, dispatch]);
 
   useEffect(() => {
     if (state.tags.length < 25) {
@@ -157,52 +162,52 @@ const YouTubeAutomation = () => {
     }
   }, [newTagIndex]);
 
-  const handleTranscriptionComplete = (newTranscription, newSummary, identifiedSpeakers) => {
+  const handleTranscriptionComplete = useCallback((newTranscription, newSummary, identifiedSpeakers) => {
     dispatch({ type: 'SET_TRANSCRIPTION', payload: newTranscription });
     dispatch({ type: 'SET_SUMMARY', payload: newSummary });
     dispatch({ type: 'SET_SPEAKERS', payload: identifiedSpeakers });
     
     const speakerInfo = identifiedSpeakers.map(s => `${s.name} (Speaker ${s.id})`).join(', ');
     updateDescription(newSummary, speakerInfo, newTranscription);
-  };
+  }, [dispatch, socialMediaLinks]);
 
-  const updateDescription = (summary, speakerInfo, transcription) => {
+  const updateDescription = useCallback((summary, speakerInfo, transcription) => {
     const newDescription = `SUMMARY:\n${summary}\n\nSpeakers: ${speakerInfo}\n\n${socialMediaLinks}\n\nTRANSCRIPT:\n${transcription}`;
     dispatch({ type: 'SET_DESCRIPTION', payload: newDescription });
-  };
+  }, [dispatch, state.speakers, state.transcription, updateDescription]);
 
   const fetchAnalyticsData = async () => {
     // TODO: Implement actual analytics data fetching
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
     return { views: 1000, likes: 100, comments: 50 };
-  };
+  }, [state]);
 
   const generateThumbnail = async (file) => {
     // TODO: Implement actual thumbnail generation
     dispatch({ type: 'SET_THUMBNAIL', payload: "/placeholder.svg" });
   };
 
-  const handleAIMetadataGeneration = (aiTitle, aiDescription, aiTags) => {
+  const handleAIMetadataGeneration = useCallback((aiTitle, aiDescription, aiTags) => {
     dispatch({ type: 'SET_TITLE', payload: aiTitle });
     updateDescription(aiDescription, state.speakers.map(s => `${s.name} (Speaker ${s.id})`).join(', '), state.transcription);
     dispatch({ type: 'SET_TAGS', payload: aiTags });
   };
 
-  const handleSocialMediaUpdate = (links) => {
+  const handleSocialMediaUpdate = useCallback((links) => {
     setSocialMediaLinks(links);
-    updateDescription(summary, speakers.map(s => `${s.name} (Speaker ${s.id})`).join(', '), transcription);
-  };
+    updateDescription(state.summary, state.speakers.map(s => `${s.name} (Speaker ${s.id})`).join(', '), state.transcription);
+  }, [state.summary, state.speakers, state.transcription, updateDescription]);
 
-  const handleScheduleChange = (date) => {
+  const handleScheduleChange = useCallback((date) => {
     dispatch({ type: 'SET_SCHEDULED_TIME', payload: date });
-  };
+  }, [dispatch]);
 
-  const handleAutoSchedule = (playlistId, scheduledTime) => {
+  const handleAutoSchedule = useCallback((playlistId, scheduledTime) => {
     dispatch({ type: 'SET_PLAYLIST', payload: playlistId });
     dispatch({ type: 'SET_SCHEDULED_TIME', payload: scheduledTime });
-  };
+  }, [dispatch]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     // TODO: Implement actual video upload and metadata submission
     console.log('Submitting video:', { 
       videoFile: state.videoFile, 
@@ -276,11 +281,21 @@ const YouTubeAutomation = () => {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="video-title">Video Title</Label>
-                <Input id="video-title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1" />
+                <Input 
+                  id="video-title" 
+                  value={state.title} 
+                  onChange={(e) => dispatch({ type: 'SET_TITLE', payload: e.target.value })} 
+                  className="mt-1" 
+                />
               </div>
               <div>
                 <Label htmlFor="video-description">Video Description</Label>
-                <Textarea id="video-description" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1" />
+                <Textarea 
+                  id="video-description" 
+                  value={state.description} 
+                  onChange={(e) => dispatch({ type: 'SET_DESCRIPTION', payload: e.target.value })} 
+                  className="mt-1" 
+                />
               </div>
               <div>
                 <Label htmlFor="playlist-name">Detected Playlist</Label>
@@ -292,7 +307,7 @@ const YouTubeAutomation = () => {
               <div>
                 <Label>Tags</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {tags.map((tag, index) => (
+                  {state.tags.map((tag, index) => (
                     <Badge 
                       key={index} 
                       variant="secondary"

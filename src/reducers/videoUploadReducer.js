@@ -13,7 +13,7 @@ export const initialState = {
   progress: 0,
 };
 
-export const useVideoUploadReducer = (state, action) => {
+export const videoUploadReducer = (state, action) => {
   switch (action.type) {
     case 'SET_VIDEO_FILE':
       return { ...state, videoFile: action.payload };
