@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,9 +52,11 @@ const YouTubeAutomation = () => {
 
   useEffect(() => {
     if (state.videoFile) {
-      generateThumbnail(state.videoFile);
+      generateThumbnail(state.videoFile).then(thumbnailUrl => {
+        dispatch({ type: 'SET_THUMBNAIL', payload: thumbnailUrl });
+      });
     }
-  }, [state.videoFile]);
+  }, [state.videoFile, generateThumbnail, dispatch]);
 
   const handleVideoUpload = useCallback(async (event) => {
     try {
@@ -87,6 +89,10 @@ const YouTubeAutomation = () => {
   };
 
   const startAutomationProcess = useCallback(async (file) => {
+    if (!file) {
+      console.error('No file provided to startAutomationProcess');
+      return;
+    }
     console.log('Starting automation process');
     dispatch({ type: 'START_PROCESSING' });
     const startTime = Date.now();
@@ -128,12 +134,16 @@ const YouTubeAutomation = () => {
     }
   }, [dispatch, socialMediaLinks, updateDescription]);
 
-  const generateThumbnail = async (file) => {
+  const generateThumbnail = useCallback(async (file) => {
+    if (!file) {
+      console.error('No file provided to generateThumbnail');
+      return "/placeholder.svg";
+    }
     // TODO: Implement actual thumbnail generation
     return "/placeholder.svg";
-  };
+  }, []);
 
-  const removeTag = (indexToRemove) => {
+  const removeTag = useCallback((indexToRemove) => {
     dispatch({ type: 'SET_TAGS', payload: state.tags.filter((_, index) => index !== indexToRemove) });
     generateKeywordSuggestions(state.title, state.description, state.playlist, state.tags);
   }, [state.tags, state.title, state.description, state.playlist, dispatch]);
@@ -168,18 +178,13 @@ const YouTubeAutomation = () => {
     
     const speakerInfo = identifiedSpeakers.map(s => `${s.name} (Speaker ${s.id})`).join(', ');
     updateDescription(newSummary, speakerInfo, newTranscription);
-  }, [dispatch, socialMediaLinks]);
+  }, [dispatch, updateDescription]);
 
   const updateDescription = useCallback((summary, speakerInfo, transcription) => {
     const newDescription = `SUMMARY:\n${summary}\n\nSpeakers: ${speakerInfo}\n\n${socialMediaLinks}\n\nTRANSCRIPT:\n${transcription}`;
     dispatch({ type: 'SET_DESCRIPTION', payload: newDescription });
-  }, [dispatch, state.speakers, state.transcription, updateDescription]);
+  }, [dispatch, socialMediaLinks]);
 
-  const fetchAnalyticsData = async () => {
-    // TODO: Implement actual analytics data fetching
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
-    return { views: 1000, likes: 100, comments: 50 };
-  };
 
   const handleAIMetadataGeneration = (aiTitle, aiDescription, aiTags) => {
     dispatch({ type: 'SET_TITLE', payload: aiTitle });
@@ -201,7 +206,7 @@ const YouTubeAutomation = () => {
     dispatch({ type: 'SET_SCHEDULED_TIME', payload: scheduledTime });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     // TODO: Implement actual video upload and metadata submission
     console.log('Submitting video:', { 
       videoFile: state.videoFile, 
