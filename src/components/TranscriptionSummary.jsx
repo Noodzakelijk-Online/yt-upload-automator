@@ -4,8 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 
-const TranscriptionSummary = ({ transcription, summary, speakers }) => {
+const TranscriptionSummary = ({ onTranscriptionComplete }) => {
   const [progress, setProgress] = useState(0);
+  const [transcription, setTranscription] = useState('');
+  const [summary, setSummary] = useState('');
 
   const webSpeechTranscribe = async (file) => {
     // Implement Web Speech API transcription with speaker diarization
@@ -76,6 +78,9 @@ const TranscriptionSummary = ({ transcription, summary, speakers }) => {
     
     const generatedSummary = await generateSummary(consolidatedTranscription);
     
+    setTranscription(consolidatedTranscription);
+    setSummary(generatedSummary);
+    
     // Update the parent component with the results
     onTranscriptionComplete(consolidatedTranscription, generatedSummary, identifiedSpeakers);
   };
@@ -96,17 +101,17 @@ const TranscriptionSummary = ({ transcription, summary, speakers }) => {
             <p className="text-sm text-center mt-2">Transcribing: {Math.round(progress)}%</p>
           </div>
         )}
+        {summary && (
+          <div>
+            <h3 className="font-semibold mb-2">SUMMARY:</h3>
+            <Textarea value={summary} readOnly className="h-24" />
+          </div>
+        )}
         {transcription && (
-          <>
-            <div>
-              <h3 className="font-semibold mb-2">Summary</h3>
-              <Textarea value={summary} readOnly className="h-24" />
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Transcription</h3>
-              <Textarea value={transcription} readOnly className="h-48" />
-            </div>
-          </>
+          <div>
+            <h3 className="font-semibold mb-2">TRANSCRIPT:</h3>
+            <Textarea value={transcription} readOnly className="h-48" />
+          </div>
         )}
       </CardContent>
     </Card>

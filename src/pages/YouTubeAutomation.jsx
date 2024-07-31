@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import TranscriptionSummary from '@/components/TranscriptionSummary';
+import { useState } from 'react';
 import ThumbnailGenerator from '@/components/ThumbnailGenerator';
 import AIMetadataGenerator from '@/components/AIMetadataGenerator';
 import KeywordSuggestions from '@/components/KeywordSuggestions';
@@ -144,6 +145,10 @@ const YouTubeAutomation = () => {
     }
   }, [newTagIndex]);
 
+  const [transcription, setTranscription] = useState('');
+  const [summary, setSummary] = useState('');
+  const [speakers, setSpeakers] = useState([]);
+
   const handleTranscriptionComplete = (newTranscription, newSummary, identifiedSpeakers) => {
     setTranscription(newTranscription);
     setSummary(newSummary);
@@ -154,7 +159,7 @@ const YouTubeAutomation = () => {
   };
 
   const updateDescription = (summary, speakerInfo, transcription) => {
-    setDescription(`${summary}\n\nSpeakers: ${speakerInfo}\n\n${socialMediaLinks}\n\nTranscript:\n${transcription}`);
+    setDescription(`SUMMARY:\n${summary}\n\nSpeakers: ${speakerInfo}\n\n${socialMediaLinks}\n\nTRANSCRIPT:\n${transcription}`);
   };
 
   const fetchAnalyticsData = async () => {
@@ -249,9 +254,6 @@ const YouTubeAutomation = () => {
         </TabsContent>
         <TabsContent value="transcribe">
           <TranscriptionSummary
-            transcription={transcription}
-            summary={summary}
-            speakers={speakers}
             onTranscriptionComplete={handleTranscriptionComplete}
           />
         </TabsContent>
