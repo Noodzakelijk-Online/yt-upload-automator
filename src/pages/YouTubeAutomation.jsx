@@ -128,12 +128,12 @@ const YouTubeAutomation = () => {
     }
   }, [dispatch, socialMediaLinks, updateDescription]);
 
-  const generateThumbnail = useCallback(async (file) => {
+  const generateThumbnail = async (file) => {
     // TODO: Implement actual thumbnail generation
     return "/placeholder.svg";
-  }, []);
+  };
 
-  const removeTag = useCallback((indexToRemove) => {
+  const removeTag = (indexToRemove) => {
     dispatch({ type: 'SET_TAGS', payload: state.tags.filter((_, index) => index !== indexToRemove) });
     generateKeywordSuggestions(state.title, state.description, state.playlist, state.tags);
   }, [state.tags, state.title, state.description, state.playlist, dispatch]);
@@ -179,34 +179,29 @@ const YouTubeAutomation = () => {
     // TODO: Implement actual analytics data fetching
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
     return { views: 1000, likes: 100, comments: 50 };
-  }, [state]);
-
-  const generateThumbnail = async (file) => {
-    // TODO: Implement actual thumbnail generation
-    dispatch({ type: 'SET_THUMBNAIL', payload: "/placeholder.svg" });
   };
 
-  const handleAIMetadataGeneration = useCallback((aiTitle, aiDescription, aiTags) => {
+  const handleAIMetadataGeneration = (aiTitle, aiDescription, aiTags) => {
     dispatch({ type: 'SET_TITLE', payload: aiTitle });
     updateDescription(aiDescription, state.speakers.map(s => `${s.name} (Speaker ${s.id})`).join(', '), state.transcription);
     dispatch({ type: 'SET_TAGS', payload: aiTags });
   };
 
-  const handleSocialMediaUpdate = useCallback((links) => {
+  const handleSocialMediaUpdate = (links) => {
     setSocialMediaLinks(links);
     updateDescription(state.summary, state.speakers.map(s => `${s.name} (Speaker ${s.id})`).join(', '), state.transcription);
-  }, [state.summary, state.speakers, state.transcription, updateDescription]);
+  };
 
-  const handleScheduleChange = useCallback((date) => {
+  const handleScheduleChange = (date) => {
     dispatch({ type: 'SET_SCHEDULED_TIME', payload: date });
-  }, [dispatch]);
+  };
 
-  const handleAutoSchedule = useCallback((playlistId, scheduledTime) => {
+  const handleAutoSchedule = (playlistId, scheduledTime) => {
     dispatch({ type: 'SET_PLAYLIST', payload: playlistId });
     dispatch({ type: 'SET_SCHEDULED_TIME', payload: scheduledTime });
-  }, [dispatch]);
+  };
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = () => {
     // TODO: Implement actual video upload and metadata submission
     console.log('Submitting video:', { 
       videoFile: state.videoFile, 
@@ -244,13 +239,13 @@ const YouTubeAutomation = () => {
       )}
       
       <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8">
           <TabsTrigger value="upload">Upload</TabsTrigger>
           <TabsTrigger value="transcribe">Transcribe</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
-          <TabsTrigger value="social">Social Media</TabsTrigger>
-          <TabsTrigger value="schedule">Manual Schedule</TabsTrigger>
-          <TabsTrigger value="auto-schedule">Auto Schedule</TabsTrigger>
+          <TabsTrigger value="social">Social</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="auto-schedule">Auto</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="retroactive">Retroactive</TabsTrigger>
         </TabsList>
