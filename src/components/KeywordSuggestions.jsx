@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,17 +6,18 @@ import { Badge } from "@/components/ui/badge";
 const KeywordSuggestions = ({ tags, onGenerate }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
     setIsGenerating(true);
     try {
       const newTags = await onGenerate();
-      setIsGenerating(false);
       return newTags;
     } catch (error) {
       console.error('Error generating tags:', error);
+      toast.error('Failed to generate tags. Please try again.');
+    } finally {
       setIsGenerating(false);
     }
-  };
+  }, [onGenerate]);
   return (
     <Card className="mt-6">
       <CardHeader>

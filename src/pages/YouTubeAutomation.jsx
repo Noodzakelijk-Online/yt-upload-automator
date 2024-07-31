@@ -1,11 +1,11 @@
-import React, { useEffect, useCallback, useRef, useReducer, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useReducer, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { videoUploadReducer, initialState } from '../reducers/videoUploadReducer';
 import { useErrorLogger } from '../hooks/useErrorLogger';
-import { generateTranscription, generateAIMetadata, generateKeywordSuggestions, detectPlaylist, generateThumbnail } from '../services/videoServices';
+import { generateTranscription, generateAIMetadata, generateKeywordSuggestions, detectPlaylist } from '../services/videoServices';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import TranscriptionSummary from '@/components/TranscriptionSummary';
 import ThumbnailGenerator from '@/components/ThumbnailGenerator';
 import AIMetadataGenerator from '@/components/AIMetadataGenerator';
@@ -32,7 +31,6 @@ const YouTubeAutomation = () => {
   const { errorLogs, addErrorLog } = useErrorLogger();
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
   const [newTagIndex, setNewTagIndex] = useState(null);
-  const [, setNewTagIndexForceUpdate] = useState(0);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -136,7 +134,7 @@ const YouTubeAutomation = () => {
       clearInterval(progressInterval);
       dispatch({ type: 'END_PROCESSING' });
     }
-  }, [dispatch, state.summary, state.speakers, state.transcription, updateDescription]);
+  }, [dispatch, addErrorLog, state.title, state.description, state.playlist, state.tags]);
 
   const generateThumbnail = useCallback(async (file) => {
     if (!file) {
@@ -283,7 +281,11 @@ const YouTubeAutomation = () => {
           />
         </TabsContent>
         <TabsContent value="metadata">
-          <AIMetadataGenerator onGenerate={handleAIMetadataGeneration} transcription={state.transcription} />
+          <AIMetadataGenerator onGenerate={async () => {
+            const metadata = await generateAIMetadata(state.transcription);
+            handleAIMetadataGeneration(metadata.title, metadata.description, metadata.tags.split(','));
+            return metadata;
+          }} transcription={state.transcription} />
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Video Details</CardTitle>
@@ -339,8 +341,16 @@ const YouTubeAutomation = () => {
               </div>
             </CardContent>
           </Card>
-          <KeywordSuggestions tags={state.tags} onGenerate={() => generateKeywordSuggestions(state.title, state.description, state.playlist, state.tags)} />
-          <ThumbnailGenerator videoFile={state.videoFile} onGenerate={(url) => dispatch({ type: 'SET_THUMBNAIL', payload: url })} />
+          <KeywordSuggestions tags={state.tags} onGenerate={async () => {
+            const newTags = await generateKeywordSuggestions(state.title, state.description, state.playlist, state.tags);
+            dispatch({ type: 'SET_TAGS', payload: newTags });
+            return newTags;
+          }} />
+          <ThumbnailGenerator videoFile={state.videoFile} onGenerate={async () => {
+            const thumbnailUrl = await generateThumbnail(state.videoFile);
+            dispatch({ type: 'SET_THUMBNAIL', payload: thumbnailUrl });
+            return thumbnailUrl;
+          }} />
           {state.thumbnailUrl && (
             <img src={state.thumbnailUrl} alt="Generated Thumbnail" className="mt-4 w-full max-w-md mx-auto object-cover h-48" />
           )}
