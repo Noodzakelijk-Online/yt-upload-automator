@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { useVideoUploadReducer, initialState } from '../reducers/videoUploadReducer';
 import { useErrorLogger } from '../hooks/useErrorLogger';
 import { generateTranscription, generateAIMetadata, generateKeywordSuggestions, detectPlaylist } from '../services/videoServices';
@@ -28,11 +29,16 @@ import SocialMediaLinks from '@/components/SocialMediaLinks';
 import { useQuery } from '@tanstack/react-query';
 
 const YouTubeAutomation = () => {
+  console.log('YouTubeAutomation component rendered');
   const [state, dispatch] = useReducer(useVideoUploadReducer, initialState);
   const { errorLogs, addErrorLog } = useErrorLogger();
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
   const [newTagIndex, setNewTagIndex] = useState(null);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    console.log('Current state:', state);
+  }, [state]);
 
   const { data: analyticsData } = useQuery({
     queryKey: ['analytics'],
@@ -48,15 +54,19 @@ const YouTubeAutomation = () => {
 
   const handleVideoUpload = async (event) => {
     try {
+      console.log('handleVideoUpload called');
       const file = event.target.files[0];
       if (!file) {
         throw new Error("No file selected");
       }
+      console.log('File selected:', file.name);
       dispatch({ type: 'SET_VIDEO_FILE', payload: file });
       await uploadVideo(file);
       await startAutomationProcess(file);
     } catch (error) {
+      console.error('Error in handleVideoUpload:', error);
       addErrorLog("Video Upload", error);
+      toast.error(`Upload failed: ${error.message}`);
     }
   };
 
@@ -73,6 +83,7 @@ const YouTubeAutomation = () => {
   };
 
   const startAutomationProcess = async (file) => {
+    console.log('Starting automation process');
     dispatch({ type: 'START_PROCESSING' });
     const startTime = Date.now();
 
@@ -89,9 +100,11 @@ const YouTubeAutomation = () => {
         generateThumbnail(file),
         generateTranscription(file),
         generateAIMetadata(),
-        generateKeywordSuggestions(state.title, state.description, playlistName, state.tags),
+        generateKeywordSuggestions(state.title, state.description, state.playlist, state.tags),
         detectPlaylist(transcriptionData.transcription)
       ]);
+
+      console.log('Automation steps completed:', { thumbnail, transcriptionData, metadata, keywords, detectedPlaylist });
 
       dispatch({ type: 'SET_THUMBNAIL', payload: thumbnail });
       handleTranscriptionComplete(transcriptionData);
@@ -100,9 +113,11 @@ const YouTubeAutomation = () => {
       dispatch({ type: 'SET_PLAYLIST', payload: detectedPlaylist });
 
       console.log('Automation process completed');
+      toast.success('Video processing completed successfully!');
     } catch (error) {
       console.error('Error during automation process:', error);
       addErrorLog("Automation Process", error);
+      toast.error(`Automation process failed: ${error.message}`);
     } finally {
       clearInterval(progressInterval);
       dispatch({ type: 'END_PROCESSING' });

@@ -1,17 +1,20 @@
 export const generateTranscription = async (file) => {
-  console.log('Generating transcription');
+  console.log('Generating transcription for file:', file.name);
   try {
     // Simulating a fast transcription process
     await new Promise(resolve => setTimeout(resolve, 200));
     if (Math.random() < 0.1) { // 10% chance of error for demonstration
       throw new Error("Transcription service unavailable");
     }
-    return {
+    const result = {
       transcription: 'This is a sample transcription.',
       summary: 'This is a sample summary.',
       speakers: [{ id: 1, name: 'Speaker 1' }]
     };
+    console.log('Transcription generated:', result);
+    return result;
   } catch (error) {
+    console.error('Transcription generation failed:', error);
     throw new Error(`Transcription failed: ${error.message}`);
   }
 };
@@ -48,28 +51,36 @@ export const detectPlaylist = async (transcription) => {
 };
 
 export const generateAIMetadata = async (transcription) => {
-  console.log('Generating AI metadata');
+  console.log('Generating AI metadata for transcription:', transcription);
   try {
     // Simulating AI processing of the transcription
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // Extract key topics from the transcription
     const topics = extractTopics(transcription);
+    console.log('Extracted topics:', topics);
 
     // Generate a title prefix based on the main topic
     const titlePrefix = generateTitlePrefix(topics[0]);
+    console.log('Generated title prefix:', titlePrefix);
 
     // Generate a more relevant title
     const title = `${titlePrefix}: ${generateRelevantTitle(topics)}`;
+    console.log('Generated title:', title);
 
     // Generate a description based on the transcription and topics
     const description = generateDescription(transcription, topics);
+    console.log('Generated description:', description);
 
     // Generate tags based on the topics and title
     const tags = generateTags(topics, title);
+    console.log('Generated tags:', tags);
 
-    return { title, description, tags: tags.join(',') };
+    const result = { title, description, tags: tags.join(',') };
+    console.log('AI metadata generation result:', result);
+    return result;
   } catch (error) {
+    console.error('AI metadata generation failed:', error);
     throw new Error(`AI metadata generation failed: ${error.message}`);
   }
 };
