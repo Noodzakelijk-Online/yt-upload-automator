@@ -16,22 +16,76 @@ export const generateTranscription = async (file) => {
   }
 };
 
-export const generateAIMetadata = async () => {
+export const generateAIMetadata = async (transcription) => {
   console.log('Generating AI metadata');
   try {
-    // Simulating a fast AI metadata generation
-    await new Promise(resolve => setTimeout(resolve, 100));
-    if (Math.random() < 0.1) { // 10% chance of error for demonstration
-      throw new Error("AI service temporarily overloaded");
-    }
-    return {
-      title: 'AI Generated Title',
-      description: 'AI Generated Description',
-      tags: 'ai,generated,tags'
-    };
+    // Simulating AI processing of the transcription
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Extract key topics from the transcription
+    const topics = extractTopics(transcription);
+
+    // Generate a title prefix based on the main topic
+    const titlePrefix = generateTitlePrefix(topics[0]);
+
+    // Generate a more relevant title
+    const title = `${titlePrefix}: ${generateRelevantTitle(topics)}`;
+
+    // Generate a description based on the transcription and topics
+    const description = generateDescription(transcription, topics);
+
+    // Generate tags based on the topics and title
+    const tags = generateTags(topics, title);
+
+    return { title, description, tags: tags.join(',') };
   } catch (error) {
     throw new Error(`AI metadata generation failed: ${error.message}`);
   }
+};
+
+const extractTopics = (transcription) => {
+  // This is a simplified topic extraction. In a real scenario, you'd use NLP techniques.
+  const words = transcription.toLowerCase().split(/\s+/);
+  const wordFrequency = words.reduce((acc, word) => {
+    if (word.length > 3) { // Ignore short words
+      acc[word] = (acc[word] || 0) + 1;
+    }
+    return acc;
+  }, {});
+  return Object.entries(wordFrequency)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([word]) => word);
+};
+
+const generateTitlePrefix = (mainTopic) => {
+  const prefixes = [
+    "The Ultimate Guide to",
+    "Mastering",
+    "Exploring",
+    "Understanding",
+    "Demystifying",
+    "The Secrets of",
+    "Unlocking the Power of",
+    "A Deep Dive into",
+    "The Future of",
+    "Revolutionizing"
+  ];
+  return `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${mainTopic.charAt(0).toUpperCase() + mainTopic.slice(1)}`;
+};
+
+const generateRelevantTitle = (topics) => {
+  return `How ${topics[1]} and ${topics[2]} Impact ${topics[0]}`;
+};
+
+const generateDescription = (transcription, topics) => {
+  const summary = transcription.split('.').slice(0, 3).join('.') + '.';
+  return `Discover the intricate relationship between ${topics.join(', ')} in this insightful video. ${summary} Learn how these concepts interplay and affect your understanding of ${topics[0]}.`;
+};
+
+const generateTags = (topics, title) => {
+  const titleWords = title.toLowerCase().split(/\s+/);
+  return [...new Set([...topics, ...titleWords])].filter(tag => tag.length > 3).slice(0, 15);
 };
 
 export const generateKeywordSuggestions = async (title, description, playlistName, existingTags) => {

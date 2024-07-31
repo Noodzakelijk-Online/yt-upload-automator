@@ -254,7 +254,7 @@ const YouTubeAutomation = () => {
           />
         </TabsContent>
         <TabsContent value="metadata">
-          <AIMetadataGenerator onGenerate={handleAIMetadataGeneration} />
+          <AIMetadataGenerator onGenerate={handleAIMetadataGeneration} transcription={transcription} />
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Video Details</CardTitle>

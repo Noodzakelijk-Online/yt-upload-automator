@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { generateAIMetadata } from '../services/videoServices';
 
-const AIMetadataGenerator = ({ onGenerate }) => {
+const AIMetadataGenerator = ({ onGenerate, transcription }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateMetadata = async () => {
     setIsGenerating(true);
-    // TODO: Implement actual AI-powered metadata generation
-    const aiTitle = "AI Generated Title";
-    const aiDescription = "This is an AI-generated description for your video.";
-    const aiTags = "ai, generated, tags";
-    setIsGenerating(false);
-    onGenerate(aiTitle, aiDescription, aiTags);
+    try {
+      const { title, description, tags } = await generateAIMetadata(transcription);
+      onGenerate(title, description, tags);
+    } catch (error) {
+      console.error("Error generating metadata:", error);
+      // You might want to show an error message to the user here
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
