@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useReducer } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useReducer, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,7 @@ const YouTubeAutomation = () => {
   const { errorLogs, addErrorLog } = useErrorLogger();
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
   const [newTagIndex, setNewTagIndex] = useState(null);
+  const [, setNewTagIndexForceUpdate] = useState(0);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -43,6 +44,8 @@ const YouTubeAutomation = () => {
     queryFn: fetchAnalyticsData,
     enabled: false, // Only fetch when needed
   });
+
+  const memoizedAnalyticsData = useMemo(() => analyticsData, [analyticsData]);
 
   useEffect(() => {
     if (state.videoFile) {
@@ -73,6 +76,7 @@ const YouTubeAutomation = () => {
       console.error('Error in handleVideoUpload:', error);
       addErrorLog("Video Upload", error);
       toast.error(`Upload failed: ${error.message}`);
+      dispatch({ type: 'END_PROCESSING' });
     }
   }, [dispatch, addErrorLog]);
 
@@ -166,10 +170,11 @@ const YouTubeAutomation = () => {
     if (newTagIndex !== null) {
       const timer = setTimeout(() => {
         setNewTagIndex(null);
+        setNewTagIndexForceUpdate(prev => prev + 1);
       }, 60000);
       return () => clearTimeout(timer);
     }
-  }, [newTagIndex]);
+  }, [newTagIndex, setNewTagIndex]);
 
   const handleTranscriptionComplete = useCallback((newTranscription, newSummary, identifiedSpeakers) => {
     dispatch({ type: 'SET_TRANSCRIPTION', payload: newTranscription });
@@ -222,8 +227,14 @@ const YouTubeAutomation = () => {
   }, [state]);
 
   const fetchAnalyticsData = async () => {
-    // TODO: Implement actual analytics data fetching
-    return { views: 1000, likes: 100, comments: 50 };
+    try {
+      // TODO: Implement actual analytics data fetching
+      return { views: 1000, likes: 100, comments: 50 };
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      addErrorLog("Analytics Fetch", error);
+      throw error;
+    }
   };
 
   return (
@@ -341,7 +352,7 @@ const YouTubeAutomation = () => {
           <AutoScheduler videoData={state} onSchedule={handleAutoSchedule} />
         </TabsContent>
         <TabsContent value="analytics">
-          <AnalyticsDashboard data={analyticsData} />
+          <AnalyticsDashboard data={memoizedAnalyticsData} />
         </TabsContent>
         <TabsContent value="retroactive">
           <RetroactiveUpdate />
@@ -391,8 +402,8 @@ const YouTubeAutomation = () => {
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[200px]">
-              {errorLogs.map((log, index) => (
-                <Alert key={index} variant="destructive" className="mb-2">
+              {errorLogs.map((log) => (
+                <Alert key={log.timestamp} variant="destructive" className="mb-2">
                   <AlertTitle>{log.process} Error - {new Date(log.timestamp).toLocaleString()}</AlertTitle>
                   <AlertDescription>
                     <p><strong>Error:</strong> {log.error}</p>

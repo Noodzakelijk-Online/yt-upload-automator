@@ -2,10 +2,6 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
 const ThumbnailGenerator = ({ videoFile, onGenerate }) => {
   const [generatedThumbnail, setGeneratedThumbnail] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
