@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef, useReducer, useMemo } 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { videoUploadReducer, initialState } from '../reducers/videoUploadReducer';
 import { useErrorLogger } from '../hooks/useErrorLogger';
