@@ -24,6 +24,7 @@ import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import RetroactiveUpdate from '@/components/RetroactiveUpdate';
 import SocialMediaLinks from '@/components/SocialMediaLinks';
 import { useQuery } from '@tanstack/react-query';
+import { Slider } from '@/components/SliderWrapper';  // Update this import
 
 const YouTubeAutomation = () => {
   console.log('YouTubeAutomation component rendered');
@@ -433,3 +434,4 @@ const YouTubeAutomation = () => {
 };
 
 export default YouTubeAutomation;
+
