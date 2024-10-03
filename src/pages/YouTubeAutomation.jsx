@@ -27,7 +27,7 @@ import { useQuery } from '@tanstack/react-query';
 import * as SliderPrimitive from "@radix-ui/react-slider";
 
 // Import the Slider component directly from the ui folder
-import { Slider as OriginalSlider } from './ui/slider';
+import { Slider as OriginalSlider } from '@/components/ui/slider';
 
 // Create a new Slider component that wraps the original
 const Slider = React.forwardRef((props, ref) => {
