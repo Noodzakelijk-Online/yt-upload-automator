@@ -37,20 +37,16 @@ const SocialMediaLinks = ({ onUpdate }) => {
     return url; // Return corrected URL if needed
   };
 
-  const handleLinkChange = useCallback((platform, newUrl) => {
-    verifyAndUpdateLink(platform, newUrl)
-      .then(verifiedUrl => {
-        setLinks(prevLinks => ({
-          ...prevLinks,
-          [platform]: verifiedUrl
-        }));
-        onUpdate(formatSocialMediaDescription({ ...links, [platform]: verifiedUrl }));
-      })
-      .catch(error => {
-        console.error('Error verifying link:', error);
-        // Handle the error appropriately, e.g., show a toast message
-      });
+  const handleLinkChange = useCallback(async (platform, newUrl) => {
+    // ... existing code ...
   }, [links, onUpdate]);
+    const verifiedUrl = await verifyAndUpdateLink(platform, newUrl);
+    setLinks(prevLinks => ({
+      ...prevLinks,
+      [platform]: verifiedUrl
+    }));
+    onUpdate(formatSocialMediaDescription({ ...links, [platform]: verifiedUrl }));
+  };
 
   const formatSocialMediaDescription = (links) => {
     return Object.entries(links)
