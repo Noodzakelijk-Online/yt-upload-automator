@@ -24,7 +24,17 @@ import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import RetroactiveUpdate from '@/components/RetroactiveUpdate';
 import SocialMediaLinks from '@/components/SocialMediaLinks';
 import { useQuery } from '@tanstack/react-query';
-import { Slider } from '@/components/SliderWrapper';  // Update this import
+import * as SliderPrimitive from "@radix-ui/react-slider";
+
+// Import the Slider component directly from the ui folder
+import { Slider as OriginalSlider } from './ui/slider';
+
+// Create a new Slider component that wraps the original
+const Slider = React.forwardRef((props, ref) => {
+  return <OriginalSlider {...props} ref={ref} />;
+});
+
+Slider.displayName = 'Slider';
 
 const YouTubeAutomation = () => {
   console.log('YouTubeAutomation component rendered');
@@ -188,7 +198,6 @@ const YouTubeAutomation = () => {
     const newDescription = `SUMMARY:\n${summary}\n\nSpeakers: ${speakerInfo}\n\n${socialMediaLinks}\n\nTRANSCRIPT:\n${transcription}`;
     dispatch({ type: 'SET_DESCRIPTION', payload: newDescription });
   }, [dispatch, socialMediaLinks]);
-
 
   const handleAIMetadataGeneration = (aiTitle, aiDescription, aiTags) => {
     dispatch({ type: 'SET_TITLE', payload: aiTitle });
@@ -434,4 +443,3 @@ const YouTubeAutomation = () => {
 };
 
 export default YouTubeAutomation;
-
