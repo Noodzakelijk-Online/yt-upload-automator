@@ -24,20 +24,9 @@ import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import RetroactiveUpdate from '@/components/RetroactiveUpdate';
 import SocialMediaLinks from '@/components/SocialMediaLinks';
 import { useQuery } from '@tanstack/react-query';
-import * as SliderPrimitive from "@radix-ui/react-slider";
-
-// Import the Slider component directly from the ui folder
-import { Slider as OriginalSlider } from '@/components/ui/slider';
-
-// Create a new Slider component that wraps the original
-const Slider = React.forwardRef((props, ref) => {
-  return <OriginalSlider {...props} ref={ref} />;
-});
-
-Slider.displayName = 'Slider';
+import { Slider } from '@/components/SliderWrapper';
 
 const YouTubeAutomation = () => {
-  console.log('YouTubeAutomation component rendered');
   const [state, dispatch] = useReducer(videoUploadReducer, initialState);
   const { errorLogs, addErrorLog } = useErrorLogger();
   const [socialMediaLinks, setSocialMediaLinks] = useState('');
@@ -234,33 +223,12 @@ const YouTubeAutomation = () => {
     toast.success('Video submitted successfully!');
   }, [state]);
 
-  const fetchAnalyticsData = async () => {
-    try {
-      // TODO: Implement actual analytics data fetching
-      return { views: 1000, likes: 100, comments: 50 };
-    } catch (error) {
-      console.error('Error fetching analytics data:', error);
-      addErrorLog("Analytics Fetch", error);
-      throw error;
-    }
-  };
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">YouTube Video Automation</h1>
       
-      {state.isProcessing && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Processing Video</CardTitle>
-            <CardDescription>Automating video upload process</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Progress value={state.progress} className="w-full" />
-            <p className="text-sm text-center mt-2">Progress: {Math.round(state.progress)}%</p>
-          </CardContent>
-        </Card>
-      )}
+      {state.isProcessing && <ProcessingCard progress={state.progress} />}
       
       <Tabs defaultValue="upload" className="w-full">
         <TabsList className="grid w-full grid-cols-4 md:grid-cols-8">
@@ -273,173 +241,53 @@ const YouTubeAutomation = () => {
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="retroactive">Retroactive</TabsTrigger>
         </TabsList>
+        
         <TabsContent value="upload">
-          <Card>
-            <CardHeader>
-              <CardTitle>Step 1: Upload Video</CardTitle>
-              <CardDescription>Select your video file to begin the automation process.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Label htmlFor="video-upload">Choose video file</Label>
-              <Input id="video-upload" type="file" accept="video/*" onChange={handleVideoUpload} className="mt-2" />
-            </CardContent>
-          </Card>
+          <UploadTab handleVideoUpload={handleVideoUpload} />
         </TabsContent>
+        
         <TabsContent value="transcribe">
-          <TranscriptionSummary
-            onTranscriptionComplete={handleTranscriptionComplete}
+          <TranscriptionSummary onTranscriptionComplete={handleTranscriptionComplete} />
+        </TabsContent>
+        
+        <TabsContent value="metadata">
+          <MetadataTab
+            state={state}
+            dispatch={dispatch}
+            handleAIMetadataGeneration={handleAIMetadataGeneration}
+            removeTag={removeTag}
+            generateThumbnail={generateThumbnail}
           />
         </TabsContent>
-        <TabsContent value="metadata">
-          <AIMetadataGenerator onGenerate={async () => {
-            const metadata = await generateAIMetadata(state.transcription);
-            handleAIMetadataGeneration(metadata.title, metadata.description, metadata.tags.split(','));
-            return metadata;
-          }} transcription={state.transcription} />
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Video Details</CardTitle>
-              <CardDescription>Edit the AI-generated metadata for your video.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="video-title">Video Title</Label>
-                <Input 
-                  id="video-title" 
-                  value={state.title} 
-                  onChange={(e) => dispatch({ type: 'SET_TITLE', payload: e.target.value })} 
-                  className="mt-1" 
-                />
-              </div>
-              <div>
-                <Label htmlFor="video-description">Video Description</Label>
-                <Textarea 
-                  id="video-description" 
-                  value={state.description} 
-                  onChange={(e) => dispatch({ type: 'SET_DESCRIPTION', payload: e.target.value })} 
-                  className="mt-1" 
-                />
-              </div>
-              <div>
-                <Label htmlFor="playlist-name">Detected Playlist</Label>
-                <Input id="playlist-name" value={state.playlist || ''} readOnly className="mt-1" />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Playlist automatically detected based on video content. You can change this manually if needed.
-                </p>
-              </div>
-              <div>
-                <Label>Tags</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {state.tags.map((tag, index) => (
-                    <Badge 
-                      key={index} 
-                      variant="secondary"
-                      className={`flex items-center ${index === newTagIndex ? 'bg-green-400' : ''}`}
-                    >
-                      {tag}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="ml-1 p-0 h-auto"
-                        onClick={() => removeTag(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <KeywordSuggestions tags={state.tags} onGenerate={async () => {
-            const newTags = await generateKeywordSuggestions(state.title, state.description, state.playlist, state.tags);
-            dispatch({ type: 'SET_TAGS', payload: newTags });
-            return newTags;
-          }} />
-          <ThumbnailGenerator videoFile={state.videoFile} onGenerate={async () => {
-            const thumbnailUrl = await generateThumbnail(state.videoFile);
-            dispatch({ type: 'SET_THUMBNAIL', payload: thumbnailUrl });
-            return thumbnailUrl;
-          }} />
-          {state.thumbnailUrl && (
-            <img src={state.thumbnailUrl} alt="Generated Thumbnail" className="mt-4 w-full max-w-md mx-auto object-cover h-48" />
-          )}
-        </TabsContent>
+        
         <TabsContent value="social">
           <SocialMediaLinks onUpdate={handleSocialMediaUpdate} />
         </TabsContent>
+        
         <TabsContent value="schedule">
           <ScheduleUpload onSchedule={handleScheduleChange} />
         </TabsContent>
+        
         <TabsContent value="auto-schedule">
           <AutoScheduler videoData={state} onSchedule={handleAutoSchedule} />
         </TabsContent>
+        
         <TabsContent value="analytics">
           <AnalyticsDashboard data={memoizedAnalyticsData} />
         </TabsContent>
+        
         <TabsContent value="retroactive">
           <RetroactiveUpdate />
         </TabsContent>
       </Tabs>
       
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Review and Submit</CardTitle>
-          <CardDescription>Review your video details before submitting.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <p><strong>Title:</strong> {state.title}</p>
-            <p><strong>Description:</strong> {state.description}</p>
-            <p><strong>Playlist:</strong> {state.playlist}</p>
-            <p><strong>Tags:</strong> {state.tags.join(', ')}</p>
-            <p><strong>Scheduled Time:</strong> {state.scheduledTime ? state.scheduledTime.toLocaleString() : 'Not scheduled'}</p>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button>Submit Video</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure you want to submit this video?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action will upload your video and set its metadata on YouTube.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleSubmit}>Submit</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardFooter>
-      </Card>
-
-      {errorLogs.length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Error Logs</CardTitle>
-            <CardDescription>Detailed error information for debugging</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[200px]">
-              {errorLogs.map((log, index) => (
-                <Alert key={`${log.timestamp}-${index}`} variant="destructive" className="mb-2">
-                  <AlertTitle>{log.process} Error - {new Date(log.timestamp).toLocaleString()}</AlertTitle>
-                  <AlertDescription>
-                    <p><strong>Error:</strong> {log.error}</p>
-                    <p><strong>Stack Trace:</strong> {log.stack}</p>
-                  </AlertDescription>
-                </Alert>
-              ))}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
+      <ReviewSubmitCard state={state} handleSubmit={handleSubmit} />
+      
+      {errorLogs.length > 0 && <ErrorLogsCard errorLogs={errorLogs} />}
     </div>
   );
 };
+
+// ... Add new component definitions here (ProcessingCard, UploadTab, MetadataTab, ReviewSubmitCard, ErrorLogsCard)
 
 export default YouTubeAutomation;
