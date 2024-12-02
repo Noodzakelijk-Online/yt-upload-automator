@@ -1,0 +1,6 @@
+[server]
+
+maxUploadSize = 20480
+port = 8501
+enableCORS = false
+headless = true
